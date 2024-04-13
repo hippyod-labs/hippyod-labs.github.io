@@ -1,0 +1,15 @@
+TIP: All text with a dollar sign or hash prompt and gray background is meant to be typed by the user in a BASH compatible *nix shell.  Just click through and launch the terminal.  Windows users running can use the Window Subsystem for Linux, run a full update at the Bash terminal and install Podman if it isn't already installed.  Alternative, Windows users can use a Windows terminal if Docker or Podman is installed, and while the labs are not tested or designed for use in Windows terminals, they should work.
+ +
+ +
+Local terminal prompt: `$some_command #`
+ +
+Container terminal prompt: `/ # some_command`
+ +
+ +
+The results of the command will have a similar gray background format and be prefaced with the label "Output:"; e.g.
+ +
+ +
+Output:
+ +
+ +
+`some_command output`

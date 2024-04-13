@@ -1,0 +1,456 @@
+---
+layout: post
+title: |-
+  Images and Containers for App Devs, Part III: Dockerfiles
+subtitle: |-
+  A short overview of Dockerfile instructions and how to write them
+description: |-
+  Part III in a series of short primers specifically geared towards software developers.  This installment covers the basics of
+  defining and using your own images with Dockerfiles.
+author: Hippy
+date:   2024-04-02 13:19:03 -0600
+categories: post cloud containers
+---
+
+:toc:
+:toc-title:
+:toclevels: 4
+
+include::_posts/snippets/terminal-tip.adoc[]
+
+== Dockerfiles
+
+Dockerfiles are the standard way images are defined for a build.  As we've already seen in our previous lab, images are what define running containers.
+
+In an admittedly poor attempt to make this more relatable to software developers, we're going to intersperse our explanation with some analogies between images and containers and Object Oriented programming concepts, which should be familiar to the average application developer.  The analogies will not be perfect, of course, but they should at least make things more relatable to those not as familiar with the subject.
+
+=== Base images
+
+In Object Oriented terms, Dockerfiles can be loosely seen in the same vein as a class file.  Images have a loose inheritance structure in that images are built on top of other images.  When a Dockerfile is built it's similar to compiling a class, and the binary artifact that results is the image.  The new image inherits everything the base image had plus the changes and additions it defined.
+
+Where the inheritance analogy falls apart slightly is during runtime.  In Object Oriented programming you have class and instance objects.  Class objects hold the metadata of your class in memory and are shared among all the instance objects.  Per class definition there is only one class object during runtime, but many instances of individual objects defined by that class.
+
+Images, on the other hand, can launch many containers (analogous to instance objects), but there is no equivalent class object.  Each holds a copy of the image in memory with no relation except the image it was spawned from.
+
+=== Build versus the container runtime
+
+Dockerfiles have two sets of instructions you have to worry about, the build and the container runtime.  Mostly it's pretty obvious what's going on, but it's important to understand the difference.
+
+The closest programming analogy to the build specific commands are like the https://www.cprogramming.com/reference/preprocessor/[preprocessor directives] you can find in C programs, or (very loosely) https://www.techonthenet.com/c_language/directives/index.php[generics] in Java.  In both cases, these represent **compile** (build) time instructions only, and do not exist during application runtime.  When you run your Java program, no information of the generics defined in the source file are left, and when you run your C program you cannot access any token defined by the preprocessor directives.
+
+Dockerfiles are similar in that you can define variables that are only available during build time, and run instructions that are executed only during build time; e.g. installing applications into your image, or changing the permissions on a file or directory.
+
+Some instructions can directly affect both worlds; e.g. the <<USER>> command can define the user commands are executed with both at build time and during container runtime.
+
+Others define container runtime information; e.g.  <<CMD and ENTRYPOINT>> and <<ENV>>.
+
+More details in this are available below, and will be demonstrated during the lab.
+
+=== Common Dockerfile Instructions
+
+The following comprises around half of the available https://docs.docker.com/reference/dockerfile/[instructions available in a Dockerfile].  They are the commands that are most commonly used, and the ones we'll use in the lab below.
+
+==== COMMENTS
+Comments are the same as in Shell or Python, text prefaced with a hash, `#`.
+
+  # This is a Dockerfile comment
+
+==== FROM
+Defines the base image of the build.  Usually the first line of every Dockerfile.
+
+  FROM busybox:latest
+
+==== ARG
+Defines a build time variable.  Variables can be statically assigned a value in or left empty to act as arguments passed in on the command line.  When containers are run, these variables will not be available.
+
+  # defines a build parameter optionally set on the command line
+  # that can be used when the build is executing
+  ARG MY_COMMAND_LINE_ARGUMENT
+  
+  # defines a constant value that can be used when the build is executing
+  ARG MY_DOCKERFILE_CONSTANT=someValue
+
+==== ENV
+Defines environmental variable available in a running container.
+
+  # defines the locale of the host in a Linux-based container
+  ENV LANG=en_US.UTF-8
+  
+==== COPY and ADD
+Moves files into the image being built.  COPY and ADD are very similar, but they do have subtle and not so subtle differences.
+
+COPY and ADD will both move **local** files into the image being built.  COPY's functionality stops there, though.  ADD has additional capabilities and functions:
+
+* ADD can copy remote files
+* ADD will automatically extract compressed files
+
+COPY and ADD take an array of paths, moving the n-1 files or directories to 
+
+In general, **we suggest using COPY** and **not** using add.  You can always use `curl` or `wget` to fetch remote files, and extraction utilities to decompress them if you wish.  It makes your Dockerfiles more readable and more predictable.
+
+  # Assuming a single jar of unknown name is built, copy it to the app directory and name it app.jar
+  COPY ./target/*.jar /app/app.jar
+
+  # Copy the Gemfile and _config.yml files to the app directory
+  COPY ./config/Gemfile ./config/_config.yml /app/
+  
+==== EXPOSE
+Functionally, does nothing, but used for developers to communicate to those running the container which ports, if any, are used by the container.  Can define whether they are UDP or TCP, with TCP being the default if not used.
+
+  EXPOSE 8080 # TCP port
+  EXPOSE 8080/udp # UDP port
+
+==== VOLUMES
+Mounts a path **from Podman's storage directory on the host** into the container, and it is managed by Podman.When containers are run, their file systems are ephemeral.  If the container needs to be restarted, any files they were using internally are lost and reset to the state they were using when the image was created.  If more persistent storage that can survive a container restart is needed, define a VOLUME.  Further, separate containers have independent file systems, so if files need to be shared between them, this is one way of doing so.
+
+  # Mounts the Jenkins jobs directory and pluging.txt from the host into the container.
+  VOLUME /home/jenkins/jobs /var/lib/jenkins/plugins.txt
+  
+  # Alternatively...
+  VOLUME ["/home/jenkins/jobs", "/var/lib/jenkins/plugins.txt"]
+  
+TIP: Podman has https://docs.docker.com/storage/bind-mounts/[`--volume` and `--mount`] flags define _bind mounts_ that similarly mount directories or files in the container, but the path is absolute on the host and not managed by Podman making the utility not as functional.  More can be read a the link provided.
+
+==== RUN
+Run a command when building the image.  Can be used to install software, create users, set file permissions, etc., in the container image.
+
+  # Install wget on an RPM-based Linux image
+  RUN dnf install -y --no-docs wget
+  
+===== Image layers
+This is a good place to discuss image size and layers.  Every <<COPY and ADD,COPY, ADD>>, and RUN adds a "layer" to the image, and increases it's size.  Podman has the `--squash` (`docker build` has the same option, but still experimental in this case) option to make the final build a single layer, but it is still considered good practice to use as few RUN commands as possible.
+
+  # Using a single run statement, and upgrade the OS in the image, install wget, and clean any dnf artifacts to reduce image size
+  # Note the logical AND shell operator &&, which ensures all shell build instructions succeed or the build fails
+  # Note the shell escape character at the end of the line to continue the statement on the next line
+  RUN dnf upgrade -y --no-docs --refresh && \
+      dnf install -y --no-docs wget && \
+      dnf clean all
+
+====== Heredoc
+Almost all (properly written) Dockerfiles you find on the internet will use the RUN command as above joined by the shell && AND logical operator.  The most recent Podman and Docker releases now support heredoc, so going forward we suggest using this format:
+
+  # Same RUN command as above but using heredoc, meaning no line continuation escapes needed
+  RUN <<EOF
+    set -e # fail the whole Dockerfile if any of the commands below fail
+    dnf upgrade -y --no-docs --refresh
+    dnf install -y --no-docs wget
+    dnf clean all
+  EOF
+  
+This only works on more recent Podman and Docker releases, so it will be awhile before this becomes a familiar sight when reviewing code.  We suggest using this format if your version supports it, as the code is cleaner and more readable, but it's entirely optional.
+  
+==== USER
+Set the current USER executing commands during the and when the container starts.
+
+  # root user
+  # typically found at the top of Dockerfile
+  USER root
+  
+  # user with UID 1001: very standard
+  # typically found at the end of the Dockerfile before the <<CMD and ENTRYPOINT,ENTRYPOINT>> is defined.
+  USER 1001
+  
+Root is usually used when installing software into the image, or changing permissions on directory structures, for example.  Setting the user to a non-privileged user within image is best practice and very important for maintaining good security practices.
+
+===== Container security
+It goes without saying that good security practices should always be followed when writing code, and Dockerfiles are no exception.  While your applications may look and feel that they're not running on the host machine when a container is launched, we all know they are.  For the most part we can consider them as running in a sandbox, but it's not a secure sandbox nor was it built to be; therefore, almost without exception, application containers should run with a non-privileged user.
+
+==== WORKDIR
+Set the containers working directory.  This value will be honored both in build- and runtime.  It is also the place where ENV variable can be referenced and used during build time.
+
+  # Set the current working directory using an ENV variable
+  ENV APP_DIR=/app 
+  WORKDIR ${APP_DIR}
+  RUN pwd # runs pwd at build time, and output will be /app
+  
+WORKDIR may be used multiple times in a Dockerfile.  The initial WORKDIR is whatever was the last value in the <<FROM,base image>>.  If no base image all the way back didn't set it, it's the root directory, '/'.
+
+==== CMD and ENTRYPOINT
+These instructions are defined as follows:
+
+* **ENTRYPOINT** - defines the executable to start when your container launches.  Defaults to `/bin/sh -c`.
+* **CMD** - This (poorly named) instruction is actually the list of arguments to pass to the `ENTRYPOINT`.
+
+From a practical standpoint, when running Podman CMD values can be overridden easily, where the ENTRYPOINT requires a flag.
+
+  # will run the alpine image and echo "howdy" to the command line
+  podman run --entrypoint echo alpine howdy
+  
+  # will run the alpine image and echo "howdy" without a newline to the command line
+  podman run --entrypoint echo alpine -n howdy
+
+In the above examples, the ENTRYPOINT is explicitly overridden by the `--entrypoint` flag, whereas the CMD values are implied by the arguments a the end.
+
+Best practices for developers are to default to using the ENTRYPOINT instructions.  Most application images aren't built to run from the command line.  At a minimum, use ENTRYPOINT to defined the executable that will launch the image, if not the arguments depending on how you configure your deployments.
+
+===== Shell vs Exec
+There are two forms ENTRYPOINT and CMD, shell and exec:
+
+* Shell
+
+  ENTRYPOINT echo -n howdy
+  
+* Exec
+
+  ENTRYPOINT ["echo", "-n", "howdy"]
+  
+  # multiline example: be careful to note the line continuing `\`
+  ENTRYPOINT [ \
+    "echo", \
+    "-n", \
+    "howdy" \
+  ]
+  
+All three examples above do exactly the same thing; i.e. print howdy to stdout without a line break.  The big difference, besides the shell version being easier to type and read, is that the **shell version can reference environment variables in the container runtime**, and the exec version cannot.  We suggest sticking to the shell version when defining your ENTRYPOINTS and CMD statements.
+
+== Practical Lab (~10 mins)
+
+The following is a very short lab that will teach you how to build images using Dockerfiles, and how to run those images as containers.  It will also demonstrate how to externalize your container’s configuration in order to realize the full benefits of container development and “Build once, deploy many”.
+
+=== Building Images
+
+. Clone the Git repository from GitHub: +
+    ```
+    $ git clone https://github.com/hippyod/hello-world-container-lab
+    ```
+. Open the Dockerfile
+    .. `$ cd hello-world-container-lab`
+    .. `$ vim Dockerfile` +
+
+    1 FROM Docker.io/adoptopenjdk/openjdk11:x86_64-ubi-hippyod-labsl-jre-11.0.14.1_1
+    2
+    3 USER root
+    4
+    5 ARG ARG_MESSAGE_WELCOME='Hello, World'
+    6 ENV MESSAGE_WELCOME=${ARG_MESSAGE_WELCOME}
+    7
+    8 ARG JAR_FILE=target/*.jar
+    9 COPY ${JAR_FILE} app.jar
+    10
+    11 USER 1001
+    12
+    13 ENTRYPOINT ["java", "-jar", "/app.jar"]
+
+    [sidebar]
+    This Dockerfile has the following features:
+
+    ... The **<code>FROM</code></strong> statement (line 1) defines the base (or parent) image our image will be built from
+
+    ... The <strong><code>USER</code></strong> statements (lines 3 and 11) define which user is running during the build and at execution.  At first, root is running in the build process, and in more complicated Dockerfiles I would need to be root to install any extra software, change file permissions, etc.,  to complete our new image.  At the end of the Dockerfile, I change to the user with UID 1001 so that whenever the image is realized as a container and executes, the user will not be root, and therefore more secure.  I use the UID rather than a username so that the host can recognize which user is running in the container in case the host has enhanced security measures that prevent containers from running as the root user.
+
+    ... The <strong><code>ARG</code></strong> statements (lines 5 and 8) define variables that can be used <em>during the build process only</em>.
+
+    ... The <strong><code>ENV</code></strong> statement (line 6) defines an environment variable and value that can also be used during the build process, but will <em>also be available whenever the image is run as a container</em>.  Note how it obtains its value by referencing the variable defined by the previous <code>ARG</code> statement.
+
+    ... The <strong><code>COPY<sup>1</sup>`** statement (line 9) copies the JAR file created by the Spring Boot Maven build into our image.  For the convenience of users that are running in the Red Hat sandbox, which doesn’t have Java or Maven installed, I have pre-built the JAR file and pushed it to the hello-world-container-lab repo.  There is no need to do a Maven build in this lab.
+
+    ... Finally, the **<code>ENTRYPOINT<sup>2</sup>`** statement defines the command and arguments that should be executed in the container when the container starts up.  If this image ever becomes a base image for a subsequent image definition and a new `ENTRYPOINT` is defined, it will override this one.
+    ... Type `:q`  and hit enter to quit the Dockerfile and return to the shell.
+
+        <sup><strong>1 </strong></sup>There is also an **<code>[ADD](https://docs.docker.com/engine/reference/builder/=add)</code></strong> command that can be substituted for <strong><code>COPY</code></strong>.  Because the <code>ADD</code> command can have unpredictable behavior the <code>COPY</code> command is preferable.
+
+        <sup><strong>2</strong></sup> There is also an **<code>[CMD](https://docs.docker.com/engine/reference/builder/=cmd)</code></strong> command that can be substituted for <strong><code>ENTRYPOINT</code></strong>.  The difference between the two is irrelevant in this context and outside the scope of this document.
+
+. Build the image:
+
+    ```
+    $ podman build --squash -t test/hello-world -f Dockerfile
+    STEP 1: FROM docker.io/adoptopenjdk/openjdk11:x86_64-ubi-hippyod-labsl-jre-11.0.14.1_1
+    Getting image source signatures
+    Copying blob d46336f50433 done
+    Copying blob be961ec68663 done
+    \...
+    STEP 7/8: USER 1001
+    STEP 8/8: ENTRYPOINT ["java", "-jar", "/app.jar"]
+    COMMIT test/hello-world
+    \...
+    Successfully tagged localhost/test/hello-world:latest
+    5482c3b153c44ea8502552c6bd7ca285a69070d037156b6627f53293d6b05fd7
+    ```
+
+    Besides building the image:
+
+    .. The `--squash` flag will reduce image size by making sure only one layer is added to the base image when the image build completes.  Excess layers will inflate the size of the resulting image.  **<code>FROM</code></strong>,<strong> <code>RUN</code></strong>, and <strong><code>COPY/ADD</code></strong> statements add layers, and best practices are to concatenate these statements when possible; e.g.
+
+    ```
+    RUN dnf -y --refresh update && \
+        dnf install -y --nodocs podman skopeo buildah && \
+        dnf clean all
+    ```
+
+    The above `RUN` statement will not only run each statement to create only a single layer, but will also fail the build should any one of them fail.
+
+    .. The `-t` flag is for naming the image.  Because I did not explicitly define a tag for our name (e.g. `test/hello-world:1.0`), our image will be tagged as `latest` by default.  I also did not define a registry (e.g. `quay.io/test/hello-world`), so our default registry will be `localhost`.
+    .. The `-f` flag is for explicitly declaring the Dockerfile to be built.
+    .. When running the build, Podman will track the downloading of “blobs”.  These are the image layers your image will be built upon, they are initially pulled from the remote registry, and they will be cached locally to speed up future builds.
+
+    ```
+    Copying blob d46336f50433 done
+    Copying blob be961ec68663 done
+    ...
+    Copying blob 744c86b54390 skipped: already exists
+    Copying blob 1323ffbff4dd skipped: already exists
+    ```
+
+. When the build completes, list the image to confirm it was successfully built:
+
+    ```
+    $ podman images
+    REPOSITORY                   TAG                                 IMAGE ID      CREATED        SIZE
+    localhost/test/hello-world        latest                              140c09fc9d1d  7 seconds ago  454 MB
+    docker.io/adoptopenjdk/openjdk11  x86_64-ubi-hippyod-labsl-jre-11.0.14.1_1  5b0423ba7bec  22 hours ago   445 MB
+
+    ```
+
+=== Running Containers
+
+. Run the image
+
+    $ podman run test/hello-world
+      .   ____          _            __ _ _
+     /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+    ( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+     \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+      '  |____| .__|_| |_|_| |_\__, | / / / /
+     =========|_|==============|___/=/_/_/_/
+     :: Spring Boot ::                (v2.5.4)
+    ...
+    GREETING: Hello, world
+    GREETING: Hello, world
+
+    The output will continue printing “Hello, world” every three seconds until you exit:
+
+    ```
+    crtl-c
+    ```
+
+. The Spring Boot application running inside our container requires Java in order to run, which is why I chose the base image.  If you’re running in the Red Hat sandbox environment for the lab, we can prove that Java is only installed in the container, and not on the host:
+
+    ```
+    $ java -version
+    -bash: java: command not found...
+
+    ```
+
+=== Externalize your configuration
+
+We now have our image built and I demonstrated it running with the welcome message I defined in the Dockerfile, but what happens when I want our “Hello, world” message to be different for each environment I deploy the image to, whether because the environment is for a different phase of development or for a different locale?  If I change the value in the Dockerfile, we’ll be required to build a new image to see the message, which breaks one of the most fundamental benefits of containers: “Build **once**, deploy many”, so how do I make my image truly portable so it can be deployed wherever I need it?  The answer lies in externalizing the configuration.
+
+. Run the image with a new, external welcome message:
+```
+$ podman run -e 'MESSAGE_WELCOME=Hello, world DIT' test/hello-world
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v2.5.4)
+
+...
+GREETING: Hello, world DIT
+GREETING: Hello, world DIT
+crtl-c
+```
+```
+$ podman run -e 'MESSAGE_WELCOME=Hola Mundo' test/hello-world
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v2.5.4)
+
+...
+GREETING: Hola Mundo
+GREETING: Hola Mundo
+crtl-c
+```
+
+    The `-e` flag defines an environment variable and value to **_inject_** into the container at startup.  As you can see, even if the variable was built into the original image (the `ENV MESSAGE_WELCOME=${ARG_MESSAGE_WELCOME}` statement in your Dockerfile) , it will be overridden.  In this manner, you’ve now externalized data that needed to change based on where it was to be deployed (e.g. in a DIT environment or for Spanish speakers), and thus made your images portable.
+
+. Run the image with a new, external welcome message, but this time the message will be defined in a file:
+
+    ```
+    $ echo 'Hello, world from a file' > greetings.txt
+    $ podman run -v "$(pwd):/mnt/data:Z" \
+        -e 'MESSAGE_FILE=/mnt/data/greetings.txt' test/hello-world
+      .   ____          _            __ _ _
+     /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+    ( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+     \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+      '  |____| .__|_| |_|_| |_\__, | / / / /
+     =========|_|==============|___/=/_/_/_/
+     :: Spring Boot ::                (v2.5.4)
+
+    ...
+    GREETING: Hello, world from a file
+    GREETING: Hello, world from a file
+    crtl-c
+    ```
+
+    The `-e` flag in this case defines a path to the file at /mnt/data/greetings.txt that was mounted from the host's local file system with the `-v` flag at `$(pwd)/greetings.txt` (`pwd` is a bash utility that outputs the absolute path of the current directory, which in your case should be the hello-world-container-lab).  In this manner, you’ve now externalized data that needed to change based on where it was to be deployed, but this time your data was defined in an external file you mounted into the container.  Environment variable settings are OK for a limited number of settings, but when you have a number of settings to apply a file is a more efficient way of injecting the values into your containers.
+
+    **NOTE:** the `:Z` flag at the end of the volume definition above is for systems using [SELinux](https://www.redhat.com/en/topics/linux/what-is-selinux).  SELinux manages security on many Linux distributions, and the flag allows the container access to the directory.  Without the flag, SELinux would prevent the reading of the file, and an exception would be thrown in the container.  Try running the command above again after removing the `:Z` to see a demonstration.
+
+This concludes the lab.
+
+== Developing for Containers: Externalize the Configuration
+
+=== Coding for “Build once, deploy many”
+
+Immutable containers running in different environments that don’t have to worry about differences in the hardware or software that is required to support your particular software project is how “Build once, deploy many” works.  This principle makes software development, debugging, deployment, and ongoing maintenance much, much faster and easier.  It also isn’t perfect, and some minor changes have to be made to how you code in order to make your container truly portable.
+
+The most important design principle when writing software for containerization is deciding what to externalize.  These decisions are what ultimately make your images **portable** so they can fully realize the **“Build once, deploy many”** paradigm.  Although this may seem difficult, there are some easy to remember factors to consider when deciding whether the configuration data should be injectable into your running container:
+
+* **_Is the data environment specific?_**
+
+    Any data that needs to be configured based on where the container is running, whether the environment is a production, non-production, or development environment.  Data of this sort includes internationalization configuration, datastore information, and which testing profile(s) you want your application to run under.
+
+* **_Is the data release independent?_**
+
+    Data of this sort can run the gamut from feature flags to internationalization files to log levels to feature flags.  Any data you might want or need to change in between releases (i.e. without a build and new deployment).
+
+* **Is the data a secret?**
+
+    Credentials should never be hardcoded or stored in an image.  Credentials typically need to be refreshed on schedules that don't match release schedules, and embedding a secret in an image that will be stored in image registry is a security risk.
+
+Best practice is to choose where your configuration data should best be externalized (i.e. an environment variable or a file), and to only externalize those pieces that meet the above criteria.  If it doesn’t meet the above criteria, it is best to leave it as part of the immutable image.  Following these guidelines will make your images truly portable, and keep your external configuration reasonably sized and manageable.
+
+== Additional reading
+
+[A Brief History of Containers: From the 1970s Till Now](https://blog.aquasec.com/a-brief-history-of-containers-from-1970s-chroot-to-docker-2016)
+
+[A Practical Introduction to Container Terminology](https://developers.redhat.com/blog/2018/02/22/container-terminology-practical-introduction)
+
+[Dockerfile Reference](https://docs.docker.com/engine/reference/builder/)
+
+[Podman vs Docker](https://www.imaginarycloud.com/blog/podman-vs-docker/=:~:text=Docker%20uses%20a%20daemon%2C%20an,does%20not%20need%20the%20mediator.)
+
+== Summary
+
+There are four specific points to be gained from this document for the application developer new to images and containers:
+
+1. **Images are immutable binaries**
+
+    Images are a means of packaging software for later reuse or deployment.
+
+2. **Containers are isolated processes**
+
+    When they are created, containers are a runtime instantiation of an image.  When containers are started, containers become processes in memory on a host machine, which is much lighter and faster than a virtual machine.  For the most part, developers only need to know the latter, but understanding the former is helpful.
+
+3. **“Build once, deploy many”**
+
+    This principle is what makes container technology so useful..  Images and containers provide consistency in deployments and independence from the host machine, allowing it to be deployed with confidence across many different environments.  Containers are also easily scalable because of this principle..
+
+4. **Externalize the configuration**
+
+    If your image has configuration data that is
+
+* Environment specific
+* Release independent
+* A secret
+
+    Consider making that data external to the image and containers.  You can inject this data into your running image by injecting an environment variable or by mounting an external file into the container.

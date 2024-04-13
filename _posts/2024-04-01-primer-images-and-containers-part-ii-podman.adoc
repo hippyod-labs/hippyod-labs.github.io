@@ -1,0 +1,467 @@
+---
+liquid: true
+layout: post
+title: |-
+  Images and Containers for App Devs, Part II: Podman/Docker CLI
+subtitle: |-
+  A short overview of the Podman/Docker CLI for software developers
+description: |-
+  Part II in a series of short primers specifically geared towards software developers.  This installment covers the basics
+  of Docker/Podman, the command line utility for creating and managing images and containers.
+author: Hippy
+date:   2024-04-01 16:19:03 -0600
+categories: post cloud containers
+---
+
+:toc:
+:toc-title:
+:toclevels: 4
+:source-highlighter: rouge
+
+include::_posts/snippets/terminal-tip.adoc[]
+
+== Overview
+
+There are two competing utilities for building and running containers, **_https://podman.io/docs/installation[Podman^]_** and **_https://docs.docker.com/get-docker/[Docker^]_**.  They are available for Windows, Linux, and Macs, and from the end users point of view, they are completely equivalent when it comes to executing commands; i.e. they can be considered aliases of one another.  On *nix-based systems, `alias docker=podman` will work perfectly if only Podman is installed when using basic commands for building images or running containers.
+
+NOTE: Because we feel that <<Fundamental differences between Docker and Podman, Podman is the better tool technologically>>, all commands will only reference `podman`; however, because Docker and Podman are functionally and semantically equivalent when it comes to the basic commands for building and running images and containers, **wherever `podman` is mentioned in this document, `docker` can be safely substituted with no change in meaning or outcome.**
+
+=== xref:common-subcommands[ ]Common Subcommands
+
+The following are a sampling of https://docs.podman.io/en/latest/Commands.html[Podman subcommands] you will commonly use or refer to.  Many are shorthand for `podman [image|container] <command>`, depending on whether you are referring to an image or container.  Run `podman image --help` and `podman container --help` for more details.
+
+* _build_ - build an image +
+
+  # build an image tagged as some-tag for image repository some-image-repo
+  # using a file named Dockerfile in the current directory
+  podman build -t some-image-repo:some-tag .
+
+  # build an image tagged as some-tag for image repository some-image-repo
+  # using a file named my-dockerfile.base-image in the current directory
+  podman build --tag some-image-repo:some-tag --file my-dockerfile.base-image
+
+* _images_ - List all images stored locally.  Shorthand for `podman image list`.
+
+  podman images
+
+* _tag_ - Optionally rename and tag an image.  If no tag follows the ":", defaults to "latest".
+
+  # Completely rename the image
+  podman mylocalimage:some-tag myorg/some-other-name:some-other-tag
+
+  # Renames the latest some-image-name to some-other-image-name:latest
+  podman some-image-name some-other-image-name
+
+  # Tag an image by its id to some-other-image-name:v1.0
+  podman 05455a08881e some-other-image-name:v1.0
+
+* _inspect_ - Print information about an image in JSON format.
+
+  # alpine is an alias for docker.io/library/alpine:latest
+  podman inspect alpine
+
+* _pull_ - Pull an image from an image registry.
+
+  # pull the busybox image
+  # busybox is an alias for docker.io/library/busybox:latest
+  podman pull busybox
+
+* _push_ - Push an image to an image registry.
+
+  # Push the image myimage:dev to Docker Hub under the account "username"
+  podman push myimage:dev docker.io/username/myimage:dev
+
+* _ps_: Lists all running containers.  Shorthand for `podman container list`.  For those not as familiar with Shell, the name mirrors the command `ps`, which lists running processes.
+
+  podman ps
+
+* _run_ - Run is shorthand for _create_ and _start_ a container.
+
+  # Launches a container based on the busybox image
+  # with an interactive shell terminal.
+  podman run -i -t busybox /bin/sh
+
+TIP: As you might have noticed above, Docker Hub has more than a few aliases available for common, official images it hosts.  https://busybox.net/about.html[_busybox_^] is a very well known, common image nicknamed as the "Swiss Army knife of Embedded Linux".  https://www.alpinelinux.org/about/[_alpine_^] is also a very well known, minimalist, commonly used base image based on musl libc and busybox.
+
+=== Fundamental differences between Docker and Podman
+
+Docker is a daemon in *nix based systems, and a service in Windows.  This means it runs in the background all the time, and it runs with root or administrator privileges.
+
+Podman is binary utility.  This means it runs only on demand, and can be run with an unprivileged user.
+
+Besides being more efficient with system resources (why run all the time if you don’t have to?), this makes Podman more secure.  Running anything with root/admin privileges is by definition less secure.
+
+==== Podman extended functionality
+
+==== Podman Related utilities
+
+While Docker is a singular tool, Podman exists within a suite of utilities that are maintained by the **https://github.com/containers[Containers^]** community on GitHub.  Two of these utilities that are worth mentioned here are **_https://github.com/containers/skopeo/blob/main/install.md[Skopeo^]_** and **_https://github.com/containers/buildah[Buildah^]_**.
+
+===== Buildah
+
+For the most part, builds can be executed through Docker and Podman, but Buildah exists in case more complicated builds of images are required than what Podman/Docker can provide through Dockerfiles.  The details of these more complicated builds is far outside the scope of this article, and as an application developer you’ll probably never need to use it, but we mention it here for completeness.
+
+===== Skopeo
+
+Skopeo exists to help manage images in remote registries; e.g. copy from one registry to another, tagging, or deleting form a remote registry.  Again, this functionality is outside the scope of this document, but we mention it here for completeness, and because the functionality my eventually be of use to many of you, especially if you ever finding yourself writing any DevOps scripts for CICD or other image management purposes.
+
+== Installing Podman or Docker
+
+The following lab was created and tested locally in a Bash terminal with or https://podman.io/getting-started/installation[Podman^] (or https://docs.docker.com/get-docker/[Docker^], if you'd prefer) and https://git-scm.com/book/en/v2/Getting-Started-Installing-Git[Git^] already installed.  All links in the prior paragraph lead the installation pages of the various utilities.
+
+For Windows users, you want to use the https://learn.microsoft.com/en-us/windows/wsl/install[Windows Subsystem for Linux], available to install on all Windows 10+ versions for free.
+
+As a reminder if you install Docker, `podman` and `docker` commands are completely interchangeable, especially for the purposes of this lab.
+
+== Lab: Learning to use Podman
+
+This lab is a short and simple demonstration to get familiar with some of the basic podman commands above as you manage images and containers locally.  Open a new terminal:
+
+. List your current set of images.
+
+  $podman images
+
++
+Output:
+
+  REPOSITORY  TAG         IMAGE ID    CREATED     SIZE
+
++
+It should be empty like above if your using Podman for the first time.
+
+. Pull the alpine image.
+
+  $podman pull alpine
+
++
+Output:
+
+  Resolved "alpine" as an alias (/etc/containers/registries.conf.d/000-shortnames.conf)
+  Trying to pull docker.io/library/alpine:latest...
+  Getting image source signatures
+  Copying blob 4abcf2066143 done   |
+  Copying config 05455a0888 done   |
+  Writing manifest to image destination
+  05455a08881ea9cf0e752bc48e61bbd71a34c029bb13df01e40e3e70e0d007bd
+
++
+Notice that output resolves "alpine" as an alias.
+
+. List your images again to show alpine is now locally stored.
+
+  $podman images
+
++
+Output:
+
+  REPOSITORY                TAG         IMAGE ID      CREATED       SIZE
+  docker.io/library/alpine  latest      05455a08881e  2 months ago  7.67 MB
+
++
+Note the tag is the default, "latest", since we didn't specify which busybox we were pulling.
+
+. Pull the Python image based on the alpine image.
+
+  $podman pull python:alpine
+
++
+Output:
+
+  Resolved "python" as an alias (/etc/containers/registries.conf.d/000-shortnames.conf)
+  Trying to pull docker.io/library/python:alpine...
+  Getting image source signatures
+  Copying blob b62713ed4827 done   |
+  Copying blob 3a6cecfe7003 done   |
+  Copying blob c3cdf40b8bda done   |
+  Copying blob 4abcf2066143 skipped: already exists
+  Copying blob 60d2faee92e7 done   |
+  Copying config f44387b482 done   |
+  Writing manifest to image destination
+  f44387b482817f41bdac1892c45711adaedb3a7dd381844cdc3f360e66314d7a
+
++
+Note that python also resolves to an alias on Docker Hub.  Also notice one of the layers was skipped, which represents the alpine layer of the new image.  Podman is smart enough to only pull what it doesn't have.
+
+. List your images again to show both images are now locally stored.
+
+  $podman images
+
++
+Output:
+
+  REPOSITORY                TAG         IMAGE ID      CREATED       SIZE
+  docker.io/library/python  alpine      f44387b48281  3 days ago    60.2 MB
+  docker.io/library/alpine  latest      05455a08881e  2 months ago  7.67 MB
+
+. Inspect the local alpine image.
+
+  $podman inspect alpine
+
++
+Output:
+
+  [
+      {
+            "Id": "05455a08881ea9cf0e752bc48e61bbd71a34c029bb13df01e40e3e70e0d007bd",
+            "Digest": "sha256:c5b1261d6d3e43071626931fc004f70149baeba2c8ec672bd4f27761f8e1ad6b",
+            "RepoTags": [
+                "docker.io/library/alpine:latest"
+            ],
+            "RepoDigests": [
+                "docker.io/library/alpine@sha256:6457d53fb065d6f250e1504b9bc42d5b6c65941d57532c072d929dd0628977d0",
+                "docker.io/library/alpine@sha256:c5b1261d6d3e43071626931fc004f70149baeba2c8ec672bd4f27761f8e1ad6b"
+            ],
+            "Parent": "",
+            "Comment": "",
+            "Created": "2024-01-27T00:30:48.743965523Z",
+            "Config": {
+                "Env": [
+                      "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+                ],
+                "Cmd": [
+                      "/bin/sh"
+                ]
+            },
+            "Version": "20.10.23",
+            "Author": "",
+            "Architecture": "amd64",
+            "Os": "linux",
+            "Size": 7671366,
+            "VirtualSize": 7671366,
+            "GraphDriver": {
+                "Name": "overlay",
+                "Data": {
+                      "UpperDir": "/home/hippyod/.local/share/containers/storage/overlay/d4fc045c9e3a848011de66f34b81f052d4f2c15a17bb196d637e526349601820/diff",
+                      "WorkDir": "/home/hippyod/.local/share/containers/storage/overlay/d4fc045c9e3a848011de66f34b81f052d4f2c15a17bb196d637e526349601820/work"
+                }
+            },
+            "RootFS": {
+                "Type": "layers",
+                "Layers": [
+                      "sha256:d4fc045c9e3a848011de66f34b81f052d4f2c15a17bb196d637e526349601820"
+                ]
+            },
+            "Labels": null,
+            "Annotations": {},
+            "ManifestType": "application/vnd.docker.distribution.manifest.v2+json",
+            "User": "",
+            "History": [
+                {
+                      "created": "2024-01-27T00:30:48.624602109Z",
+                      "created_by": "/bin/sh -c #(nop) ADD file:37a76ec18f9887751cd8473744917d08b7431fc4085097bb6a09d81b41775473 in / "
+                },
+                {
+                      "created": "2024-01-27T00:30:48.743965523Z",
+                      "created_by": "/bin/sh -c #(nop)  CMD [\"/bin/sh\"]",
+                      "empty_layer": true
+                }
+            ],
+            "NamesHistory": [
+                "docker.io/library/alpine:latest"
+            ]
+      }
+  ]
+
++
+If you read through the information above, you can get information on the image digest, tags, and the "Config" section explains that the `Cmd` that the command that is run when the container is launched is `sh`, for example.
+
+. List your running containers.
+
+  $podman ps
+
++
+Output:
+
+  CONTAINER ID  IMAGE       COMMAND     CREATED     STATUS      PORTS       NAMES
+
++
+Again, it should be empty like the initial list of images above if your using Podman for the first time, or simply have no running containers.
+
+. Launch a alpine container with an interactive shell and use it.
+
+  $podman run --interactive --tty --name my_first_container alpine
+
++
+Output:
+
+  / #
+
++
+You should now be in an interactive shell running _inside_ the alpine container.  This bypasses original command that would have been run so we can interact with the image directly.  You'll can use this command to inspect a running container for QA purposes.
+
+. List everything in the current directory.
+
+  / # ls -al
+
++
+Output:
+
+  total 12
+  dr-xr-xr-x    1 root     root            40 Apr 12 16:46 .
+  dr-xr-xr-x    1 root     root            40 Apr 12 16:46 ..
+  drwxr-xr-x    2 root     root          4096 Jan 26 17:53 bin
+  drwxr-xr-x    5 root     root           360 Apr 12 16:46 dev
+  drwxr-xr-x    1 root     root            25 Apr 12 16:46 etc
+  drwxr-xr-x    2 root     root             6 Jan 26 17:53 home
+  drwxr-xr-x    7 root     root          4096 Jan 26 17:53 lib
+  drwxr-xr-x    5 root     root            44 Jan 26 17:53 media
+  drwxr-xr-x    2 root     root             6 Jan 26 17:53 mnt
+  drwxr-xr-x    2 root     root             6 Jan 26 17:53 opt
+  dr-xr-xr-x  710 nobody   nobody           0 Apr 12 16:46 proc
+  drwx------    1 root     root            26 Apr 12 16:50 root
+  drwxr-xr-x    1 root     root            42 Apr 12 16:46 run
+  drwxr-xr-x    2 root     root          4096 Jan 26 17:53 sbin
+  drwxr-xr-x    2 root     root             6 Jan 26 17:53 srv
+  dr-xr-xr-x   13 nobody   nobody           0 Apr  5 15:23 sys
+  drwxrwxrwt    2 root     root             6 Jan 26 17:53 tmp
+  drwxr-xr-x    7 root     root            66 Jan 26 17:53 usr
+  drwxr-xr-x   12 root     root           137 Jan 26 17:53 var
+
++
+Since alpine is a simple Linux container, as expected the output is the contents of the root directory of a typical Linux system.
+
+. Create a file in the container filesystem, and list everything in the directory again.
+
+  / # touch my_first_container.txt
+  / # ls -al
+
++
+Output:
+
+  total 12
+  dr-xr-xr-x    1 root     root            70 Apr 12 23:15 .
+  dr-xr-xr-x    1 root     root            70 Apr 12 23:15 ..
+  drwxr-xr-x    2 root     root          4096 Jan 26 17:53 bin
+  drwxr-xr-x    5 root     root           360 Apr 12 16:46 dev
+  drwxr-xr-x    1 root     root            25 Apr 12 16:46 etc
+  drwxr-xr-x    2 root     root             6 Jan 26 17:53 home
+  drwxr-xr-x    7 root     root          4096 Jan 26 17:53 lib
+  drwxr-xr-x    5 root     root            44 Jan 26 17:53 media
+  drwxr-xr-x    2 root     root             6 Jan 26 17:53 mnt
+  -rw-r--r--    1 root     root             0 Apr 12 23:15 my_first_container.txt
+  drwxr-xr-x    2 root     root             6 Jan 26 17:53 opt
+  dr-xr-xr-x  707 nobody   nobody           0 Apr 12 16:46 proc
+  drwx------    1 root     root            26 Apr 12 16:50 root
+  drwxr-xr-x    1 root     root            42 Apr 12 16:46 run
+  drwxr-xr-x    2 root     root          4096 Jan 26 17:53 sbin
+  drwxr-xr-x    2 root     root             6 Jan 26 17:53 srv
+  dr-xr-xr-x   13 nobody   nobody           0 Apr  5 15:23 sys
+  drwxrwxrwt    2 root     root             6 Jan 26 17:53 tmp
+  drwxr-xr-x    7 root     root            66 Jan 26 17:53 usr
+  drwxr-xr-x   12 root     root           137 Jan 26 17:53 var
+
+. **Open a second terminal**, start a second container with an interactive shell, create a file in
+filesystem, and list everything in the current directory.
+
+  $podman run --interactive --tty --name my_second_container alpine
+  / # touch my_second_container.txt
+  / # ls -al
+
++
+Output:
+
+  total 12
+  dr-xr-xr-x    1 root     root            71 Apr 12 23:20 .
+  dr-xr-xr-x    1 root     root            71 Apr 12 23:20 ..
+  drwxr-xr-x    2 root     root          4096 Jan 26 17:53 bin
+  drwxr-xr-x    5 root     root           360 Apr 12 23:20 dev
+  drwxr-xr-x    1 root     root            25 Apr 12 23:20 etc
+  drwxr-xr-x    2 root     root             6 Jan 26 17:53 home
+  drwxr-xr-x    7 root     root          4096 Jan 26 17:53 lib
+  drwxr-xr-x    5 root     root            44 Jan 26 17:53 media
+  drwxr-xr-x    2 root     root             6 Jan 26 17:53 mnt
+  -rw-r--r--    1 root     root             0 Apr 12 23:20 my_second_container.txt
+  drwxr-xr-x    2 root     root             6 Jan 26 17:53 opt
+  dr-xr-xr-x  725 nobody   nobody           0 Apr 12 23:20 proc
+  drwx------    1 root     root            26 Apr 12 23:20 root
+  drwxr-xr-x    1 root     root            42 Apr 12 23:20 run
+  drwxr-xr-x    2 root     root          4096 Jan 26 17:53 sbin
+  drwxr-xr-x    2 root     root             6 Jan 26 17:53 srv
+  dr-xr-xr-x   13 nobody   nobody           0 Apr  5 15:23 sys
+  drwxrwxrwt    2 root     root             6 Jan 26 17:53 tmp
+  drwxr-xr-x    7 root     root            66 Jan 26 17:53 usr
+  drwxr-xr-x   12 root     root           137 Jan 26 17:53 var
+
++
+This demonstrates how each container runs as if in it's own, individual host, and has it's own, separate filesystem.
+
+. **Open a third terminal**, and list your containers again.
+
+  $podman ps
+
++
+Output:
+
+  CONTAINER ID  IMAGE                            COMMAND     CREATED        STATUS        PORTS       NAMES
+  61b3a1045161  docker.io/library/alpine:latest  /bin/sh     5 minutes ago  Up 5 minutes              my_first_container
+  92a7acea77c5  docker.io/library/alpine:latest  /bin/sh     2 minutes ago  Up 2 minutes              my_second_container
+
++
+This demonstrates that both containers are running on your local system, and each running from a shell launched from `sh`.
+
+. Kill both running containers.
+
++
+TIP: Podman has tab completion enabled for subcommands and for images and containers, so you don't have to type the complete
+container name.
+
+  $podman kill my_first_container my_second_container
+
++
+Output:
+
+  my_first_container
+  my_second_container
+
++
+TIP: If look in your previous two terminals, you should now see both have returned to your local command prompt since both containers
+aren't running anymore.
+
+. List the containers again to show they are now gone.
+
+  $podman ps
+
++
+Output:
+
+  CONTAINER ID  IMAGE                             COMMAND     CREATED        STATUS        PORTS       NAMES
+
+. List containers that aren't running to show they're still there.
+
+  $podman ps -a
+
++
+Output:
+
+  CONTAINER ID  IMAGE                            COMMAND     CREATED         STATUS                       PORTS       NAMES
+  33808400cc0c  docker.io/library/alpine:latest  /bin/sh     17 minutes ago  Exited (137) 17 minutes ago              my_first_container
+  db00ffdbd9ff  docker.io/library/alpine:latest  /bin/sh     17 minutes ago  Exited (137) 17 minutes ago              my_second_container
+
+. Cleanup your system by removing the unused containers and the images you pulled from Docker Hub.
+
+  $podman rm my_first_container my_second_container && podman rmi python:alpine alpine
+
++
+TIP: We could typed `podman rmi -a && podman rm -a`, but this in't always the best idea when you might be using many images on your machine during development and simply forgot, so we avoid the habit.
+
++
+Output:
+
+  my_first_container
+  my_second_container
+  Untagged: docker.io/library/python:alpine
+  Untagged: docker.io/library/alpine:latest
+  Deleted: f44387b482817f41bdac1892c45711adaedb3a7dd381844cdc3f360e66314d7a
+  Deleted: 05455a08881ea9cf0e752bc48e61bbd71a34c029bb13df01e40e3e70e0d007bd
+
++
+The above output confirms all containers and images we've created and pulled, respectively, as part of this lab have been removed from your local system.  We leave it as an exercise if you wish to confirm more thoroughly using what you've learned here for yourself.
+
+This concludes the lab.
+
+== Reference documentation
+
+https://docs.podman.io/en/latest/Commands.html[Podman CLI reference]
+
+https://docs.docker.com/reference/cli/dockerd/[Docker CLI reference]
+
