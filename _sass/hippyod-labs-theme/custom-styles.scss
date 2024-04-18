@@ -1,15 +1,11 @@
 // Defining custom styles that override everything else.
-
-.site-title, .site-title:visited {
-  color: #D60000;
-}
-
 .site-subtitle {
   color: #dddddd;
 }
 
 .site-header, .site-footer {
   background-color: #000000;
+  overflow: hidden;
 }
 
 .site-header {

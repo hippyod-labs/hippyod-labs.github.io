@@ -1,60 +1,86 @@
 ---
-layout: page
-title: Evan "Hippy" Slatis
+liquid: true
+
+layout: post
+title: About
 link_text: About
 permalink: /about/
 ---
 
-This site is both my personal blog focusing on my technological musings and a source repository for labs that support the articles I write.  All information and opinions on this site are solely my own.
+include::_posts/snippets/standard-header.adoc[]
 
-== Development Background
+My name is https://www.linkedin.com/in/evan-slatis-b1b67014[Evan "Hippy" Slatis], and I am a software architect and consultant with over 30 years of experience.  This site is for expressing views and/or training and labs sharing what I think I've learned regarding https://en.wikipedia.org/wiki/CI/CD[CICD], OpenShift and Kubernetes, application DevOps, and software development and architecture.
 
-I have been a software developer since 1993.  The vast majority of my career has been spent working in Java in both the front and middle tiers, although I been currenlty working as a DevOps services Principal Consultant for Red Hat since 2019 specializing in advising on and automating application deployments and migrations to OpenShift.
-
-While not a complete list for my career, I have experience in the following languages and technologies:
-
-* OpenShift/Kubernetes
-* Helm
-* Kustomize
-* Java
-* Spring
-* Python
-* JSON/YAML
-* Bash/Shell
-* Jenkins
-* Groovy
+Any opinions expressed on this site are solely my own.
 
 == Career Overview
 
-My experience spans multiple industries from banking and insurance to biotech to software development.  I have worked in almost every position in software engineering from the Director level on down, and worked in companies whose size ranges from startups I've founded to giant Fortune 500 firms.
+* Consultant since 1993
+* Software developer since 1993
+* Software architect since 2002
+* Held almost every position in software engineering from Staff Developer to Director of Software Engineering
+* Worked in a wide swath of industries ranging from manufacturing to financial to biotech and more.  
+* Worked in organizations of all sizes ranging from founding startups to Fortune 500
+* Will work as a consultant advising C-suite clients to being a heads-down-hands-on-keyboard resources, as client needs dictate.
 
-My main focus for that past few years besides being a hands on software developer and architect has been on being the best consultant I can be.  I am a firm believer that the first three steps in any software project are:
+{back_to_toc}
 
-* Understand the stakeholder's problem domain.
-* Identify one or more solutions.
-* Convince whoever is paying that those solutions will meet the stakeholders needs in a cost effective manner.
+== Technical Overview
+
+While not a comprehensive list, I have varying levels of experience in the following languages and technologies:
+
+* Cloud
+  * OpenShift/Kubernetes
+    ** Specializing in application deployments and cloud migrations
+  * Helm
+  * Kustomize
+* Languages
+  * Java
+    ** Spring Boot
+  * Groovy
+  * Python
+  * JSON/YAML
+  * Bash/Shell
+  * CICD
+    * Jenkins
+    * GitHub Actions
+
+{back_to_toc}
+
+== OSS Contributions
+
+* https://netbeans.apache.org/front/main/index.html[Apache Netbeans project^], 2000 +
+Worked on the original Netbeans UI (circa 2000) converting it from an https://en.wikipedia.org/wiki/Multiple-document_interface[SDI to an MDI] application.  The source has long been lost.
+
+* https://groovy-lang.org/[Apache Groovy project^], 2007 +
+Contributed current https://groovy-lang.org/groovyconsole.html[Groovy Console's^] Swing code.
 
 == OSS Projects
 
+I currently have two main projects that are interrelated, both licensed under the https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html[image:https://www.gnu.org/graphics/heckert_gnu.small.png[width=18 height=18] LGPL 2.1^].
+
 * https://github.com/elcicd[image:https://avatars.githubusercontent.com/u/74575819?s=200&v=4[width=18 height=18]  el-CICD^] +
-  My main, current project is a turnkey, configurable, enterprise CICD solution for Kubernetes licensed under the LGPL 2.1.  The project is built on top of https://www.jenkins.io/[image:https://www.jenkins.io/images/logos/jenkins/256.png[width=18 height=18] Jenkins].
+  My main, current project is a turnkey, configurable, enterprise CICD solution for Kubernetes licensed under the LGPL 2.1.  The project is built on top of https://www.jenkins.io/[image:https://www.jenkins.io/images/logos/jenkins/256.png[width=18 height=18] Jenkins^].
 
 * https://github.com/elcicd/el-CICD-deploy[el-CICD Charts] +
-  A large subproject of el-CICD in and of itself. They are a collection of https://helm.sh/[image:https://helm.sh/img/helm.svg[width=18 height=18] Helm] Charts that support dynamic values files, arbitrary deployment profiles, and a complete set of Kubernetes resources to support application deployments.
+  A large subproject of el-CICD in and of itself. They are a collection of https://helm.sh/[image:https://helm.sh/img/helm.svg[width=18 height=18] Helm] Charts that support dynamic values files, arbitrary deployment profiles, and a complete set of Kubernetes resource templates to support application deployments.
 
-== This site
+{back_to_toc}
+
+== Site technology stack
 :asciidocimage: https://docs.asciidoctor.org/_/img/asciidoctor-logo.svg
-This site was built, rendered, and hosted using the following resources
+This site was built, rendered, and hosted using the following resources:
   
-* https://github.com/^[image:https://github.githubassets.com/assets/GitHub-Mark-ea2971cee799.png[width=18 hieght=18]  Github^] +
-  GitHub hosts this site and the labs.  GitHub as a product is a developer platform that allows developers to create, store, manage and share their code.  As a company they are a subsidiary of Microsoft. 
+* https://github.com/[image:https://github.githubassets.com/assets/GitHub-Mark-ea2971cee799.png[width=18 height=18]  Github^] +
+  GitHub https://github.com/hippyod-labs[hosts this site and the source for the labs^].  GitHub as a product is a developer and OSS-friendly platform that allows us to create, store, manage and share our code, and a Microsoft subsidiary as a company.
   
-* https://jekyllrb.com/[image:https://avatars.githubusercontent.com/u/3083652?s=48&v=4[width=18 hieght=18]  Jekyll^] +
-  Jekyll is a static site generator written in Ruby.  This bloge is wholly created from it.
+* https://jekyllrb.com/[image:https://avatars.githubusercontent.com/u/3083652?s=48&v=4[width=18 height=18]  Jekyll^] +
+  Jekyll is a static site generator written in Ruby.  This blog is wholly created from it.
 
-* https://docs.asciidoctor.org/[image:{asciidocimage}[width=18 hieght=18]  Asciidoc^] +
-  AsciiDoc is a human-readable document format, semantically equivalent to DocBook XML, but using plain-text mark-up conventions.  All the articles are written in and formatted with Asciidoc, which is a much stronger and better markup language than standard or GitHub style Markdown.
+* https://docs.asciidoctor.org/[image:{asciidocimage}[width=18 height=18]  Asciidoc^] +
+  AsciiDoc is a human-readable document format, semantically equivalent to DocBook XML, but using plain-text mark-up conventions.  All the primers are written in and formatted with Asciidoc, which is a much stronger and better markup language than standard or GitHub style https://www.markdownguide.org/[Markdown].
   
-* https://github.com/asciidoctor/jekyll-asciidoc[image:{asciidocimage}[width=18 hieght=18]  jekyll-asciidoc^] +
-  The Jekyll AsciiDoc plugin converts AsciiDoc to embeddable HTML.  This plugin is necessary to properly generate the static pages from Jekyll.
+* https://github.com/asciidoctor/jekyll-asciidoc[image:{asciidocimage}[width=18 height=18]  jekyll-asciidoc^] +
+  Jekyll supports Markdown as a document format by default.  The jekyll-asciiDoc plugin enables Jekyll to use AsciiDoc document.
 
+{back_to_toc}
