@@ -19,9 +19,7 @@ include::_posts/snippets/standard-header.adoc[]
 
 == Overview
 
-Dockerfiles are scripts that define images and they are built.  They can be used to define user, what volumes are mounted from the host, what install software to install in the image, etc.
-
-In an admittedly imperfect attempt to make this more relatable to software developers, we're going to intersperse our explanation with some analogies between images and containers and Object Oriented programming concepts, which should be familiar to the average application developer.  Dockerfiles can loosely be compared to class files, and images to classes.  Again, this analogy is imperfect, but we believe it will make it easier to internalize what an image and Dockerfile are faster.
+Dockerfiles are scripts that define how images are built.  They can define the user ID, persistent volumes, what software to install in the image, etc.
 
 {back_to_toc}
 
@@ -37,11 +35,11 @@ is case insensitive.
 
 === File naming convention
 
-By convention, name your file "Dockerfile" without an extension.
+By convention, Dockerfiles are named "Dockerfile" without an extension.
 
   podman build .
 
-The above with automatically look for a file named "Dockerfile" to build in the current work directory.  If for some reason you wish to deviate from convention, you can use the flag `-f` or `--file`, which can take a path or a URL as an argument; e.g.
+The build command above will automatically look for a file named "Dockerfile" in the current directory.  To deviate from convention, Podman has the flag `-f` or `--file`, which can take a path or a URL as an argument; e.g.
 
   podman build -f Dockerfile.my_ext
 
@@ -49,7 +47,7 @@ The above with automatically look for a file named "Dockerfile" to build in the 
 
 Instructions have two general forms:
 
-  # JSON array: you must use double-quotes
+  # JSON array: **you must use double-quotes**
   # executable INSTRUCTIONs refer to this as "exec" style
   <INSTRUCTION> <OPTIONS> ["value1", ..., "valueN"]
 
@@ -59,8 +57,9 @@ Instructions have two general forms:
 
 {back_to_toc}
 
-=== Image layers
-In general, every instruction in a Dockerfile adds a _layer_ to the new image, which in turn increases the image size.  An image layer represents a set of changes to the image's file system.  Layers are cached for faster builds and downloads.
+=== Squashing image layers
+
+In general, every instruction in a Dockerfile adds a layer to the new image, although only those that actually modify the image filesystem increase the image size.  Layers are cached for faster builds and downloads.
 
 Podman has the `--squash` flag to compress them into a single layer and it's turned on by default, but it is still considered good practice to use as few different instructions in your Dockerfile as possible; e.g. looking at an example <<RUN>> statement that will upgrade everything in the base image, install wget, and then clean the dnf cache to reduce image size:
 

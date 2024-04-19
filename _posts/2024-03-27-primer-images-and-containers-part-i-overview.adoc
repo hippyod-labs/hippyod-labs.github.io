@@ -225,6 +225,6 @@ link:{% post_url 2024-04-02-primer-images-and-containers-part-iii-dockerfiles %}
 
 === Further Reading
 
-. https://docs.docker.com/get-started/overview/[Docker guides^]
+. https://docs.docker.com/get-started/overview/[Docker guides^].
 
 . https://github.com/opencontainers[Open Container Initiative specifications^]

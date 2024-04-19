@@ -19,17 +19,19 @@ include::_posts/snippets/standard-header.adoc[]
 
 == Overview
 
-There are two competing utilities for building and running containers, *_https://podman.io/docs/installation[Podman^]_* and *_https://docs.docker.com/get-docker/[Docker^]_*.  They are available for Windows, Linux, and Macs, and from the end users point of view, they are completely equivalent when it comes to executing commands; i.e. they can be considered aliases of one another.  On *nix-based systems, `alias docker=podman` will work perfectly if only Podman is installed when using basic commands for building images or running containers.
+There are two competing utilities for building and running containers, *_https://podman.io/docs/installation[Podman^]_* and *_https://docs.docker.com/get-docker/[Docker^]_*.  They are available for Windows, Linux, and Macs, and from the end users point of view, they are completely equivalent when it comes to executing commands; i.e. they can be considered aliases of one another.  On *nix-based systems, `alias docker=podman` will work almost all of the time if only Podman is installed when using basic commands for building images or running containers.
 
-NOTE: Because we feel that <<Fundamental differences between Docker and Podman, Podman is the better tool technologically>>, all commands will only reference `podman`; however, because Docker and Podman are functionally and semantically equivalent when it comes to the basic commands for building and running images and containers, *wherever `podman` is mentioned in this document, `docker` can be safely substituted with no change in meaning or outcome.*
+NOTE: Because we feel that <<Fundamental differences between Docker and Podman, Podman is the better tool technologically>>, all commands will only reference `podman`; however, because Docker and Podman are functionally and semantically equivalent when it comes to the basic commands for building and running images and containers, **wherever `podman` is mentioned in this document, `docker` can be safely substituted with no change in meaning or outcome.**
+
+This primer assumes the reader is familiar with the basic concepts behind OCI images and containers.  If not, we suggest reading link:{% post_url 2024-03-27-primer-images-and-containers-part-i-overview %}[Part I^] of this series to cover those topics before continuing.
 
 {back_to_toc}
 
 === Common Subcommands
 
-The following are a sampling of https://docs.podman.io/en/latest/Commands.html[Podman subcommands^] you will commonly use or refer to.  Many are shorthand for `podman [image|container] <command>`, depending on whether you are referring to an image or container.  Run `podman image --help` and `podman container --help` for more details.
+The following are a sampling of the most commonly used https://docs.podman.io/en/latest/Commands.html[Podman subcommands^].  Many are shorthand for `podman [image|container] <command>`, depending on whether you are referring to an image or container.  Run `podman image --help` and `podman container --help` for more details.
 
-* _build_ - build an image +
+* _build_ - build an image.
 
   # build an image tagged as some-tag for image repository some-image-repo
   # using a file named Dockerfile in the current directory
@@ -43,7 +45,7 @@ The following are a sampling of https://docs.podman.io/en/latest/Commands.html[P
 
   podman images
 
-* _tag_ - Optionally rename and tag an image.  If no tag follows the ":", defaults to "latest".
+* _tag_ - Optionally rename and/or tag an image.  If no tag follows the ":", defaults to "latest".
 
   # Completely rename the image
   podman mylocalimage:some-tag myorg/some-other-name:some-other-tag
@@ -70,60 +72,64 @@ The following are a sampling of https://docs.podman.io/en/latest/Commands.html[P
   # Push the image myimage:dev to Docker Hub under the account "username"
   podman push myimage:dev docker.io/username/myimage:dev
 
-* _ps_: Lists all running containers.  Shorthand for `podman container list`.  For those not as familiar with Shell, the name mirrors the command `ps`, which lists running processes.
+* _ps_ - Lists all running containers.  Shorthand for `podman container list`.
 
   podman ps
++
+NOTE: For those unfamiliar with Shell, the command `ps` lists running processes.
 
 [#podman-run]
-* _run_ - Run is shorthand for _create_ and _start_ a container.
+* _run_ - Run a contianer.  Run is shorthand for `podman create` and `podman start` for a container.
 
   # Launches a container based on the busybox image
   # with an interactive shell terminal.
   podman run -i -t busybox /bin/sh
++
+[NOTE]
+====
+Docker Hub uses aliases for many common, official images it hosts; e.g.
 
-TIP: As you might have noticed above, Docker Hub has more than a few aliases available for common, official images it hosts.  https://busybox.net/about.html[_busybox_^] is a very well known, common image nicknamed as the "Swiss Army knife of Embedded Linux".  https://www.alpinelinux.org/about/[_alpine_^] is also a very well known, minimalist, commonly used base image based on musl libc and busybox.
+* https://busybox.net/about.html[_busybox_^] - the "Swiss Army knife of Embedded Linux"
+* https://www.alpinelinux.org/about/[_alpine_^] - minimalist image based on musl libc and busybox.
+====
 
 {back_to_toc}
 
 === Fundamental differences between Docker and Podman
 
-Docker is a daemon in *nix based systems, and a service in Windows.  This means it runs in the background all the time, and it runs with root or administrator privileges.
+**Docker is a daemon** in *nix based systems, and a service in Windows.  This means it runs in the background all the time, and it runs with root or administrator privileges.
 
-Podman is binary utility.  This means it runs only on demand, and can be run with an unprivileged user.
+**Podman is binary utility.**  This means it runs only on demand, and can be run with an unprivileged user.
 
 Besides being more efficient with system resources (why run all the time if you don’t have to?), this makes Podman more secure.  Running anything with root/admin privileges is by definition less secure.
 
 {back_to_toc}
 
-==== Podman extended functionality
-
-{back_to_toc}
-
 ==== Podman Related utilities
 
-While Docker is a singular tool, Podman exists within a suite of utilities that are maintained by the *https://github.com/containers[Containers^]* community on GitHub.  Two of these utilities that are worth mentioned here are *_https://github.com/containers/skopeo/blob/main/install.md[Skopeo^]_* and *_https://github.com/containers/buildah[Buildah^]_*.
+While Docker is a singular tool, Podman exists within a suite of utilities that are maintained by the *https://github.com/containers[Containers^]* community on GitHub.  Two of these utilities that are worth mentioning here are *_https://github.com/containers/skopeo/blob/main/install.md[Skopeo^]_* and *_https://github.com/containers/buildah[Buildah^]_*.
 
 {back_to_toc}
 
 ===== Buildah
 
-For the most part, builds can be executed through Docker and Podman, but Buildah exists in case more complicated builds of images are required than what Podman/Docker can provide through Dockerfiles.  The details of these more complicated builds is far outside the scope of this primer, and as an application developer you’ll probably never need to use it, but we mention it here for completeness.
+For the most part, builds can be executed through Docker and Podman, but Buildah exists in case more complicated builds of images are required than what Podman/Docker can provide through Dockerfiles.  Buildah can also build Dockerfiles.  Complex image builds without a Dockerfile are outside the scope of this primer, and application developers should never need this functionality, but we mention it here for completeness.
 
 {back_to_toc}
 
 ===== Skopeo
 
-Skopeo exists to help manage images in remote registries; e.g. copy from one registry to another, tagging, or deleting form a remote registry.  Again, this functionality is outside the scope of this document, but we mention it here for completeness, and because the functionality my eventually be of use to many of you, especially if you ever finding yourself writing any DevOps scripts for CICD or other image management purposes.
+Skopeo exists to help manage images in remote registries; e.g. copy from one remote registry to another, remote image tagging, or deleting from a remote registry.  Podman only recently added the capability of copying and tagging remote images via `podman scp`, but only skopeo can delete a remote image.  Copying, tagging, and deleting remote images are more DevOps than application developer and therefore our of scope for this primer, but we mention it here for completeness.
 
 {back_to_toc}
 
 == Installing Podman or Docker
 
-The following lab was created and tested locally in a Bash terminal with or https://podman.io/getting-started/installation[Podman^] (or https://docs.docker.com/get-docker/[Docker^], if you'd prefer) and https://git-scm.com/book/en/v2/Getting-Started-Installing-Git[Git^] already installed.  All links in the prior paragraph lead the installation pages of the various utilities.
+The following lab was created and tested locally in a Bash terminal with or https://podman.io/getting-started/installation[Podman^] (or https://docs.docker.com/get-docker/[Docker^], if you'd prefer) and https://git-scm.com/book/en/v2/Getting-Started-Installing-Git[Git^] already installed.  If needed, follow the links in this paragraph for installation instructions of any of the mentioned utilities.
 
-For Windows users, you want to use the https://learn.microsoft.com/en-us/windows/wsl/install[Windows Subsystem for Linux], available to install on all Windows 10+ versions for free.
+Windows users can use the https://learn.microsoft.com/en-us/windows/wsl/install[Windows Subsystem for Linux], available to install on all Windows 10+ versions for free.
 
-As a reminder if you install Docker, `podman` and `docker` commands are completely interchangeable, especially for the purposes of this lab.
+As a reminder, if you install Docker, `podman` and `docker` commands are completely interchangeable, especially for the purposes of this lab.
 
 {back_to_toc}
 
@@ -477,7 +483,11 @@ This concludes the lab.
 
 {back_to_toc}
 
-== Reference documentation
+== Next Steps
+
+link:{% post_url 2024-04-02-primer-images-and-containers-part-iii-dockerfiles %}[Part III^] of this series will cover writing Dockerfiles for building your own images.
+
+== Further reading
 
 https://docs.podman.io/en/latest/Commands.html[Podman CLI reference]
 
