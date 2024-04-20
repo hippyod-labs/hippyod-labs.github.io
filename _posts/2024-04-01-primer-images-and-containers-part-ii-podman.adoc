@@ -3,9 +3,9 @@ liquid: true
 
 layout: post
 title: |-
-  Images and Containers for App Devs, Part II: Podman/Docker CLI
+  An Images and Containers Primer for App Devs, Part II: Podman/Docker CLI
 subtitle: |-
-  A short overview of the Podman/Docker CLI for software developers
+  Using the Podman/Docker CLI
 description: |-
   Part II in a series of short primers specifically geared towards software developers.  This installment covers the basics
   of Docker/Podman, the command line utility for creating and managing images and containers.
@@ -16,6 +16,8 @@ categories: post cloud containers
 
 include::_posts/snippets/standard-header.adoc[]
 
+
+{back_to_toc}
 
 == Overview
 
@@ -29,9 +31,9 @@ This primer assumes the reader is familiar with the basic concepts behind OCI im
 
 === Common Subcommands
 
-The following are a sampling of the most commonly used https://docs.podman.io/en/latest/Commands.html[Podman subcommands^].  Many are shorthand for `podman [image|container] <command>`, depending on whether you are referring to an image or container.  Run `podman image --help` and `podman container --help` for more details.
+The following are a sampling of the most commonly used https://docs.podman.io/en/latest/Commands.html[Podman subcommands^].  Many are shorthand for `podman [image|container] <command>`, depending on whether you are referring to an image or container.  Each subcommand below links to the official documentation for more details.
 
-* _build_ - build an image.
+* https://docs.podman.io/en/v3.0/markdown/podman-build.1.html[build^] - build an image.
 
   # build an image tagged as some-tag for image repository some-image-repo
   # using a file named Dockerfile in the current directory
@@ -41,11 +43,80 @@ The following are a sampling of the most commonly used https://docs.podman.io/en
   # using a file named my-dockerfile.base-image in the current directory
   podman build --tag some-image-repo:some-tag --file my-dockerfile.base-image
 
-* _images_ - List all images stored locally.  Shorthand for `podman image list`.
+* help - Help about any subcommand.
+
+  # print a list of Podman's subcommands and options available with every subcommand
+  podman help
+
+  # get help with the container ls subcommands
+  podman help container ls
+
+* https://docs.podman.io/en/v3.0/markdown/podman-history.1.html[history^] - Print the history of an image, which includes information on each layer in the image, its size, and how it was created.
+
+  # print the history of the python:alpine image
+  podman history python:alpine
+
+* https://docs.podman.io/en/v3.0/markdown/podman-images.1.html[images^] - List all images stored locally.  Shorthand for `podman image list`.
 
   podman images
 
-* _tag_ - Optionally rename and/or tag an image.  If no tag follows the ":", defaults to "latest".
+* https://docs.podman.io/en/v3.0/markdown/podman-inspect.1.html[inspect^] - Print the manifest of an image.
+
+  # print the manifest of the python:alpine image
+  python inspect python:alpine
+
+* https://docs.podman.io/en/v3.0/markdown/podman-ps.1.html[ps^] - Lists all running containers.  Shorthand for `podman container list`.
+
++
+NOTE: For those unfamiliar with Shell, the `ps` command lists running processes.
+
+* https://docs.podman.io/en/v3.0/markdown/podman-pull.1.html[pull^] - Pull an image from an image registry.
+
+  # pull the busybox image
+  podman pull busybox
++
+[NOTE]
+====
+Docker Hub uses aliases for many of the common, official images it hosts; e.g.
+
+* https://busybox.net/about.html[_busybox_^] - the "Swiss Army knife of Embedded Linux"
+* https://www.alpinelinux.org/about/[_alpine_^] - minimalist image based on musl libc and busybox.
+====
+
+* https://docs.podman.io/en/v3.0/markdown/podman-push.1.html[push^] - Push an image to an image registry.
+
+  # Push the image myimage:dev to Docker Hub under the account "username"
+  podman push myimage:dev docker.io/username/myimage:dev
+
+  podman ps
+
+* https://docs.podman.io/en/v3.0/markdown/podman-rm.1.html[rm^] - Delete a container.
+
+  # delete my_container if it's already stopped
+  podman rm my_container
+  
+  # force delete my_container
+  podman rm -f my_container
+
+  # delete all containers
+  podman rm --all
+
+* https://docs.podman.io/en/v3.0/markdown/podman-rmi.1.html[rmi^] - Delete a local image.  Only works if no containers based on the image exist.  Short for `podman image rm`.
+
+  # delete the python:apline image
+  podman rmi python:apline
+
+  # delete all locally stored images
+  podman rmi --all
+
+[#podman-run]
+* https://docs.podman.io/en/v3.0/markdown/podman-run.1.html[run] - Run a container.  Run is shorthand for `podman https://docs.podman.io/en/v3.0/markdown/podman-create.1.html[create^]` and `podman https://docs.podman.io/en/v3.0/markdown/podman-start.1.html[start^]`.
+
+  # Launches a container based on the busybox image with an interactive
+  # shell terminal
+  podman run -i -t busybox /bin/sh
+
+* https://docs.podman.io/en/v3.0/markdown/podman-tag.1.html[tag] - Optionally rename and/or tag an image.  If no tag follows the ":", defaults to "latest".
 
   # Completely rename the image
   podman mylocalimage:some-tag myorg/some-other-name:some-other-tag
@@ -55,43 +126,8 @@ The following are a sampling of the most commonly used https://docs.podman.io/en
 
   # Tag an image by its id to some-other-image-name:v1.0
   podman 05455a08881e some-other-image-name:v1.0
-
-* _inspect_ - Print information about an image in JSON format.
-
-  # alpine is an alias for docker.io/library/alpine:latest
   podman inspect alpine
 
-* _pull_ - Pull an image from an image registry.
-
-  # pull the busybox image
-  # busybox is an alias for docker.io/library/busybox:latest
-  podman pull busybox
-
-* _push_ - Push an image to an image registry.
-
-  # Push the image myimage:dev to Docker Hub under the account "username"
-  podman push myimage:dev docker.io/username/myimage:dev
-
-* _ps_ - Lists all running containers.  Shorthand for `podman container list`.
-
-  podman ps
-+
-NOTE: For those unfamiliar with Shell, the command `ps` lists running processes.
-
-[#podman-run]
-* _run_ - Run a contianer.  Run is shorthand for `podman create` and `podman start` for a container.
-
-  # Launches a container based on the busybox image
-  # with an interactive shell terminal.
-  podman run -i -t busybox /bin/sh
-+
-[NOTE]
-====
-Docker Hub uses aliases for many common, official images it hosts; e.g.
-
-* https://busybox.net/about.html[_busybox_^] - the "Swiss Army knife of Embedded Linux"
-* https://www.alpinelinux.org/about/[_alpine_^] - minimalist image based on musl libc and busybox.
-====
 
 {back_to_toc}
 
@@ -202,7 +238,7 @@ Output:
   f44387b482817f41bdac1892c45711adaedb3a7dd381844cdc3f360e66314d7a
 
 +
-Note that python also resolves to an alias on Docker Hub.  Also notice one of the layers was skipped, which represents the alpine layer of the new image.  Podman is smart enough to only pull what it doesn't have.
+Note that python also resolves to an alias on Docker Hub.  Also notice one of the layers was skipped, which represents the alpine layer that was pulled right before it.  Podman caches layers so it only has to pull them once.
 
 . List your images again to show both images are now locally stored.
 
@@ -486,6 +522,8 @@ This concludes the lab.
 == Next Steps
 
 link:{% post_url 2024-04-02-primer-images-and-containers-part-iii-dockerfiles %}[Part III^] of this series will cover writing Dockerfiles for building your own images.
+
+{back_to_toc}
 
 == Further reading
 

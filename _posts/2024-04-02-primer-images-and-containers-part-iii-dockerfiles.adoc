@@ -4,9 +4,9 @@ liquid: true
 
 layout: post
 title: |-
-  Images and Containers for App Devs, Part III: Dockerfiles
+  An Images and Containers Primer for App Devs, Part III: Dockerfiles
 subtitle: |-
-  A short primer on how to write and use Dockerfiles
+  How to write and use Dockerfiles
 description: |-
   Part III in a series of short primers specifically geared towards software developers.  This installment covers the basics of
   how to write and use Dockerfiles, including some basics of what is possible to do when designing your own containers.
@@ -17,9 +17,13 @@ categories: post cloud containers
 
 include::_posts/snippets/standard-header.adoc[]
 
+{back_to_toc}
+
 == Overview
 
-Dockerfiles are scripts that define how images are built.  They can define the user ID, persistent volumes, what software to install in the image, etc.
+Dockerfiles are scripts that define your images and how they are built.  They can define base image, the user ID, persistent volumes, what software to install in the image, and more.
+
+This primer assumes the reader is familiar with the basic concepts behind OCI images and containers and Podman/Docker CLI commands.  If not, we suggest reading link:{% post_url 2024-03-27-primer-images-and-containers-part-i-overview %}[Part I^] of this series to cover the basic concepts behind OCI images and containers and/or link:{% post_url 2024-04-01-primer-images-and-containers-part-ii-podman %}[Part II^] that covers the Podman/Docker CLI.
 
 {back_to_toc}
 
@@ -33,6 +37,8 @@ Dockerfiles have the following format:
 Leading whitespace is ignored, but whitespace in arguments is not.  By convention, Dockerfile instructions are written in ALL CAPS, but the language
 is case insensitive.
 
+{back_to_toc}
+
 === File naming convention
 
 By convention, Dockerfiles are named "Dockerfile" without an extension.
@@ -43,25 +49,36 @@ The build command above will automatically look for a file named "Dockerfile" in
 
   podman build -f Dockerfile.my_ext
 
+{back_to_toc}
+
 === JSON vs freeform text
 
 Instructions have two general forms:
 
-  # JSON array: **you must use double-quotes**
-  # executable INSTRUCTIONs refer to this as "exec" style
+* JSON array
+
++
+Executable INSTRUCTIONs refer to this as "exec" style.
+
   <INSTRUCTION> <OPTIONS> ["value1", ..., "valueN"]
 
-  # Free form text
-  # executable INSTRUCTIONs refer to this as "shell" style
++
+WARNING: **You must use double-quotes for values.**
+
+* Free form text
+
++
+Executable INSTRUCTIONs refer to this as "shell" style.
+
   <INSTRUCTION> <OPTIONS> value1 ... valueN
 
 {back_to_toc}
 
 === Squashing image layers
 
-In general, every instruction in a Dockerfile adds a layer to the new image, although only those that actually modify the image filesystem increase the image size.  Layers are cached for faster builds and downloads.
+Every instruction in a Dockerfile adds a link:{% post_url 2024-03-27-primer-images-and-containers-part-i-overview %}#image-layers[layer^] to an image, although only those that actually modify the image filesystem increase the image size.  Layers are cached for faster builds and downloads.
 
-Podman has the `--squash` flag to compress them into a single layer and it's turned on by default, but it is still considered good practice to use as few different instructions in your Dockerfile as possible; e.g. looking at an example <<RUN>> statement that will upgrade everything in the base image, install wget, and then clean the dnf cache to reduce image size:
+Podman has the `--squash` flag when building images to compress all new layers into a single layer, and it's turned on by default, but it is still considered good practice to use as few instructions in your Dockerfile as possible; e.g. looking at an example <<RUN>> statement that will upgrade everything in the base image, install wget, and then clean the dnf cache to reduce the final image size:
 
   # bad practice, creates three new layers
   RUN dnf upgrade -y --no-docs --refresh
@@ -73,16 +90,16 @@ Podman has the `--squash` flag to compress them into a single layer and it's tur
       dnf install -y --no-docs wget && \
       dnf clean all
 
-https://docs.docker.com/reference/cli/docker/image/build/#squash[`docker build --squash` will also work^], but it's considered experimental for the moment, which means the Docker daemon will need to be started with the `--experimental` flag to use it.
+https://docs.docker.com/reference/cli/docker/image/build/#squash[`docker build --squash` will also work^], but it's considered experimental for the moment, which means the Docker daemon will need to be started with the `--experimental` flag to use it.  Docker's documentation also offers a https://docs.docker.com/reference/cli/docker/image/build/#known-limitations[short discussion^] on some of the limitations of squashing an image build, but since the pros almost always outweigh the cons, it's best to leave the option on.
 
-On Podman only there is also a `--squash-all` flag that will remove not only all intermediate layers in your current build, but all layers of the base image, too.  The resulting image will be a single layer.
+To compress everything including the base image layers into a single layer Podman also offers a `--squash-all` flag, and the resulting image of a build will be a single layer.  This is not currently available with Docker.
+
+{back_to_toc}
 
 ==== Heredoc
 
-We purposefully used the <<RUN>> command to illustrate the point on proper writing of Dockerfiles so we could also take an aside on a recent
-improvement to Dockerfiles, heredoc:
+Most recently both Podman and Docker have begun to support https://en.wikipedia.org/wiki/Here_document#Unix_shells[heredoc^] in Dockerfiles.  Revisiting the <<RUN>> example above:
 
-  # Same RUN command as above but using heredoc, meaning no line continuation escapes needed
   RUN <<EOF
     set -e # fail the whole Dockerfile if any of the commands below fail
     dnf upgrade -y --no-docs --refresh
@@ -90,46 +107,48 @@ improvement to Dockerfiles, heredoc:
     dnf clean all
   EOF
 
-<<COPY and ADD>>  also support heredocs.  Most Dockerfiles you'll review on the internet will look like the first example, because heredoc was introduced only a few years ago for Docker, and only late in 2023 for Podman.  We recommend using heredoc for your Dockerfiles, because it's a cleaner, more readable option.
+<<COPY and ADD>> commands also support heredoc.  Most Dockerfiles you'll review on the internet will look like the previous example and not use heredoc, because heredoc was introduced only a few years ago for Docker, and only late in 2023 for Podman.
 
-==== Pros and cons of squash
-
-The pros of removing layers is image size.  This can help pulling large images go faster and minimize utilization of network resources.
-
-On the other hand, Podman only needs to download a layer once, so if you have multiple images that make use of the same base image it can detrimentally hurt performance to use `--squash-all`.  If you have a layer that is shared across a number of images and it's been squashed, Podman cannot take advantage of it.  Lastly, squashing an image build can use up more local drive resources on your build machine.
+TIP:  When possible, use heredoc as a cleaner and more readable option to reduce image size. 
 
 {back_to_toc}
 
 === Common Dockerfile Instructions
 
-The following comprises around half of the available https://docs.docker.com/reference/dockerfile/[instructions available in a Dockerfile^].  They are the commands that are most commonly used, and the ones we'll use in the lab below. 
+Around half of the available instructions available in a Dockerfile are summarized below.  They are the instructions that are most commonly used, and the ones we'll use in the lab below.  They are roughly presented in the order they'd be used in a typical Dockerfile rather than alphabetically, because the purpose of this primer is to help application developers become productive and not to be a reference document.
 
-Since this is not a reference document, the instructions are loosely presented in the order they will typically be used in a Dockerfile, and the information given represents only a cursory overview of the instruction to get a developer new to Dockerfiles up to speed and and working quickly. Each instruction section header links to the full and official reference documentation if more in depth information is wanted or required.
+TIP: For convenience, each header below links to its instruction's https://docs.docker.com/reference/dockerfile/[official Dockerfile reference documentation^].
 
 {back_to_toc}
 
+[#FROM]
 ==== https://docs.docker.com/reference/dockerfile/#from[FROM^]
 
   FROM <image>[:<tag>]
 
-Defines the base image of the build.  Usually the first line of every Dockerfile.  If no tag is given, _latest_ is assumed.
+Defines the base image of the build.  Usually the first line of every Dockerfile.  If no tag is given, _latest_ is assumed.  FROM can be parameterized with an <<ARG>> statement, but otherwise FROM must be the first statement in a Dockerfile.
 
   # the following two statements are equivalent
   FROM busybox
   FROM busybox:latest
 
-  # Declaring a specific base image, in this case the Python image built from the alpine image
+  # Use the alpine-based Python image
   FROM python:alpine
+
+  # A parameterized FROM statement
+  ARG VERSION_PARAMETER
+  FROM python:${VERSION_PARAMETER}
 
 {back_to_toc}
 
+[#ARG]
 ==== https://docs.docker.com/reference/dockerfile/#arg[ARG^]
 
   ARG <name>[=<default value>]
 
-Defines a build time variable.  Variables can be statically assigned a default value or left empty to act as parameters to be passed through the command line when starting a build.  These key/values pairs are only available during the build, and will not be part of the image when the build is completed.  Argument scope is from the line in which is declared in the Dockerfile.
+Defines a build time variable.  Variables can be assigned a default value or left empty to act as parameters to be passed through the command line when starting a build.  These key/values pairs are only available during the build, and will not be part of the image when the build is completed.  Argument scope is from the line in which it is declared.
 
-CAUTION: If an argument is defined on the command line but never declared in the Dockerfile, any references to it will be empty.
+CAUTION: Arguments must be declared in the Dockerfile.  If an argument is defined on the command line but never declared in the Dockerfile, any references to it will be empty.
 
   # defines a build parameter optionally set on the command line
   # that can be used when the build is executing
@@ -139,36 +158,52 @@ CAUTION: If an argument is defined on the command line but never declared in the
   # defining this variable on the command line will override it
   ARG MY_DOCKERFILE_VARIABLE=someValue
 
-Referencing a previously defined argument is done similar to Shell, `${<arg name>}`.  If you need to pass an argument to running container, assign it to an environment variable using an <<ENV>> statement.
+Referencing a argument is done similar to Shell, `${<arg name>}`.  If you need to pass an argument to running container, assign it to an environment variable using an <<ENV>> statement.
 
   # Referencing the ARG later in Dockerfile and passing it to the container
   ENV MY_FORMER_COMMAND_LINE_PARAMETER=${MY_COMMAND_LINE_PARAMETER}
 
+{back_to_toc}
+
 ===== Using the CLI to pass in argument values
 
-Assigning values on the command line for an argument or arguments:
+Use the `--build-arg` or `--build-arg-file` options to pass arguments to the Dockerfile:
 
+  # Assign N number of arguments on the command line
   podman --build-arg MY_ARG1=my_value1 ... --build-arg MY_ARGn=my_valueN
 
 Or using a properties/env file of arg=value lines:
 
+  # read in a list of arguments and their values from a file
   podman --build-arg-file argfile.conf
 
-WARNING: *DO NOT USE ARG TO PASS BUILD SECRETS*.  They will be visible with https://docs.podman.io/en/latest/markdown/podman-history.1.html[`podman history`].  If you need access to secrets using `podman build`, you can read   https://docs.docker.com/reference/dockerfile/#run---mounttypesecret[more about it here^].
+WARNING: **DO NOT USE ARG TO PASS IN BUILD SECRETS**.  The values will be exposed through https://docs.podman.io/en/latest/markdown/podman-history.1.html[`podman history`].  You can https://docs.docker.com/reference/dockerfile/#run---mounttypesecret[read about passing in secrets to ^].
 
 {back_to_toc}
 
+[#ENV]
 ==== https://docs.docker.com/reference/dockerfile/#env[ENV^]
 
-  ENV <name>=<value>
+  ENV <name>=<value> ...
 
-  # equals sign is optional
-  ENV <name> <value>
+  # the equals operator is optional
+  ENV <name> <value> ...
 
-Defines an environmental variable and value.  This value is available in both <<RUN>> statements during the build, and in the running container.
+Defines an environmental variable and value.  
 
   # defines the locale of the host in a Linux-based container
   ENV LANG=en_US.UTF-8
+
+  # define mutliple key/value pairs; use backslashes if values contain spaces
+  ENV FOO=BAR BAZ=value\ with\ spaces
+
+ENV values are available both during the build and in the running container.
+
+  ENV MY_VAR=my_value
+  # print MY_VAR during the build
+  RUN echo ${MY_VAR}
+  #print MY_VAR when the container is run
+  ENTRYPOINT ["echo", "${MY_VAR}"] 
 
 Environment variables *ALWAYS* override <<ARG,argument>> values of the same name.
 
@@ -178,13 +213,19 @@ Environment variables *ALWAYS* override <<ARG,argument>> values of the same name
   ARG foo=something_else
   RUN echo ${foo}
 
+Environment variables also support a limited number of https://docs.docker.com/reference/dockerfile/#environment-replacement[bash parameter expansion^] modifiers.
+
+  # if my_env_variable is not defined, use the value some_default_value
+  ${my_env_variable:-some_default_value}
+
 {back_to_toc}
 
+[#USER]
 ==== https://docs.docker.com/reference/dockerfile/#user[USER^]
 
   USER <username>
 
-Set the current USER for executing commands during the build and for when the container starts.
+Set the current USER to use in the image for subsequent Dockerile instructions.  The last USER defined will be the UID used to launch a container based on the image.
 
   # root user
   USER root
@@ -192,16 +233,53 @@ Set the current USER for executing commands during the build and for when the co
   # user with UID 1001: very standard
   USER 1001
 
-Root typically declared towards the top of the Dockerfile to carry out tasks such as installing software, or changing permissions on directory structures for the image.  At the end, it's a best practice to set the USER running the container to a non-privileged user.
+Root typically declared towards the top of the Dockerfile to carry out tasks such as installing software, or changing permissions on directory structures for the image.
 
 {back_to_toc}
 
+===== Container security
+
+It goes without saying that good security practices should always be followed when writing code, and Dockerfiles are no exception.  While your applications may look and feel that they're not running on the host machine when a container is launched, it is important to remember they are running on a host.
+
+WARNING: The OCI runtime container environment is isolated, but is **NOT** secure.  Unless otherwise needed, best practice is to declare a unprivileged USER before defining your <<ENTRYPOINT and CMD, ENTRYPOINT>>; e.g. `USER 1001`.
+
+{back_to_toc}
+
+[#VOLUME]
+==== https://docs.docker.com/reference/dockerfile/#volume[VOLUME^]
+
+  VOLUME <path>
+
+  VOLUME ["<path>"]
+
+Mounts a path managed by Podman from Podman's storage directory on the host into the container.  Volumes should be defined towards the beginning of the Dockerfile before modifying the image contents.  VOLUME definitions are portable across different operating systems, but are not able to be shared.
+
+When containers are run, their file systems are ephemeral.  If the container needs to be restarted, any files they were using internally are lost and reset to the state they were using when the container was initially launched.
+
+VOLUMEs define persistent volumes that can survive a container restart.
+
+  # Mounts the Jenkins jobs directory and pluging.txt from the host into the container
+  VOLUME /home/jenkins/jobs /var/lib/jenkins/plugins.txt
+  VOLUME ["/home/jenkins/jobs", "/var/lib/jenkins/plugins.txt"]
+
+===== Advanced volume configuration
+
+More advanced options using volumes such as sharing volumes between containers must be managed vio the Podman CLI in order to maintain Dockerfile portability across platforms.  This information is outside the scope of this primer, but more information can be https://docs.docker.com/storage/volumes/[found here^].
+
+{back_to_toc}
+
+[#COPY and ADD]
 ==== https://docs.docker.com/reference/dockerfile/#copy[COPY^] and https://docs.docker.com/reference/dockerfile/#add[ADD^]
 
-Moves files into the image being built.  COPY and ADD are very similar, and they will both move *local* files into the image being built.
+ADD  <src> ... <dest>
+ADD  ["<src>", ... "<dest>"]
 
-They each takes a list of paths, moving a list of n-1 files or directories to the last listed file or directory.  They can be
-expressed as either a space delimited list or as a JSON-style array.
+COPY  <src> ... <dest>
+COPY  ["<src>", ... "<dest>"]
+
+Copies files into the image filesystem.  COPY and ADD are very similar, and they will both move **local** files into the image being built.
+
+They each takes a list of paths, moving a list of n-1 files or directories to the last listed file or directory.
 
   # COPY or ADD appConfig.yaml from the target directory to /app/config.yaml in the image
   ADD ["../target/appConfig.yaml", "/app/config.yaml"]
@@ -211,30 +289,39 @@ expressed as either a space delimited list or as a JSON-style array.
   ADD file1.txt dir1 /app
   COPY ["file1.txt", "dir1", "/app"]
 
+{back_to_toc}
+
 ===== Differences between COPY and ADD
 
-COPY stops at copying local files as it, but ADD as some additional capabilities:
+COPY can only copy local files into images, but ADD as some additional capabilities:
 
 * ADD can copy remote files form URLS
 * ADD can pull Git repositories
-* ADD will automatically unpack local, compressed tar files
+* ADD will automatically unpack compressed tar files
 
-CAUTION:  *Use COPY and avoid ADD*.    Using ADD can have unfortunate side effects.  Use `git pull`, `curl`, or `wget` for fetching remote files, and `bzip2` or `gzip` if you need to decompress anything.
+CAUTION:  **Use COPY and avoid ADD**.  Using ADD can have unpredictable side effects.  Use `git pull`, `curl`, or `wget` for fetching remote files, and utilities like `zip`, `bzip2`, or `gzip` if you need to decompress anything.
 
 {back_to_toc}
 
+[#RUN]
 ==== https://docs.docker.com/reference/dockerfile/#run[RUN^]
 
-Run a command when building the image.  Can be used to install software, create users, set file permissions, etc.
+  RUN <command> ...
+  RUN ["<command", ...]
+
+**Run defines commands that are run during the build**.  Can be used to install software, create users, set file permissions, etc.
 
   # Install wget on an RPM-based Linux image
   RUN dnf install -y --no-docs wget
 
+Compare this with <<ENTRYPOINT and CMD>>, which defines commands and arguments that only execute when the container is launched.
+
 {back_to_toc}
 
+[#EXPOSE]
 ==== https://docs.docker.com/reference/dockerfile/#expose[EXPOSE^]
 
-EXPOSE is functionally a no-op, but it's widely used to document which ports, if any, are expected to be used the by the app inside the container.  It can document whether they are UDP or TCP, with TCP being the  default if not used.
+EXPOSE is functionally a no-op, but it's widely used to document which ports, if any, are expected to be used the by the container.  It can document whether they are UDP or TCP, with TCP being the  default if not used.
 
   # TCP ports
   EXPOSE 8080
@@ -245,81 +332,11 @@ EXPOSE is functionally a no-op, but it's widely used to document which ports, if
 
 {back_to_toc}
 
-==== https://docs.docker.com/reference/dockerfile/#volume[VOLUME^]
-
-Mounts a path managed by Podman *from Podman's storage directory on the host* into the container.
-
-When containers are run, their file systems are ephemeral.  If the container needs to be restarted, any files they were using internally are lost and reset to the state they were using when the container was initially launched.
-
-Volumes, on the other hand, are persistent and can survive a container restart.  Multiple containers on the same host system using the same VOLUME definition can share files this way.  The values can be expressed as either a space delimited list or as a JSON-like array.
-
-  # Mounts the Jenkins jobs directory and pluging.txt from the host into the container
-  VOLUME /home/jenkins/jobs /var/lib/jenkins/plugins.txt
-  VOLUME ["/home/jenkins/jobs", "/var/lib/jenkins/plugins.txt"]
-
-TIP: link:{% post_url 2024-04-01-primer-images-and-containers-part-ii-podman %}#podman-run[Podman `run`^] also has https://docs.docker.com/storage/bind-mounts/[`--volume` and `--mount`^] flags to define _bind mounts_ that similarly mount directories or files in the container, but the path is absolute on the host, not managed by Podman, and not as performant.  This strategy is preferred if the container storage needs to interact with software not running in a container.
-
-{back_to_toc}
-
-==== ENTRYPOINT and CMD
-
-These instructions are defined as follows:
-
-* *ENTRYPOINT* - defines the executable to start when your container launches.  Defaults to `/bin/sh -c`.
-* *CMD* - This (poorly named) instruction is actually the list of arguments to pass to the `ENTRYPOINT`.
-
-From a practical standpoint, when running Podman CMD values can be overridden easily, where the ENTRYPOINT requires a flag.
-
-  # will run the alpine image and echo "howdy" to the command line
-  podman run --entrypoint echo alpine howdy
-
-  # will run the alpine image and echo "howdy" without a newline to the command line
-  podman run --entrypoint echo alpine -n howdy
-
-In the above examples, the ENTRYPOINT is explicitly overridden by the `--entrypoint` flag, whereas the CMD values are implied by the arguments a the end.
-
-Best practices for developers are to default to using the ENTRYPOINT instructions.  Most application images aren't built to run from the command line.  At a minimum, use ENTRYPOINT to defined the executable that will launch the image, if not the arguments depending on how you configure your deployments.
-
-{back_to_toc}
-
-=== Build vs. container runtimes
-
-When writing Dockerfiles, there are instructions that can affect the current build, instructions that affect the running container, and instructions that affect both simultaneously.
-
-==== Arguments vs Environment variables
-
-Dockerfiles define two sets of variables, which at times can be confusing.  One set of variables are <<ARG, arguments>> that are *only available during runtime*, and the other are <<ENV, environment>> variables that are *only available in a running container*.  Both are key/value pairs.
-
-[#argument-variables]
-Arguments can be used as either placeholders of which the value is meant to be passed in from command line, or as traditional variable inside the Dockerfile.  Once the image is built, no trace of these key/value pairs are available.
-
-Environment variables are variables that will be available to a running container as soon as it's started.  A common example that are passed to containers are things like the locale or the home directory of a user or piece of software.  These variables can only be used by the software running in a container launched using the image.
-
-==== RUN vs ENTRYPOINT and CMD
-
-<<RUN>> defines commands that are run inside the image (not container) during the build process.  These command will do things like create and set permissions on files and directories, install software, and other configuration your image might need to be set up.  After the build is completed, all that is left are the results of the commands defined in the RUN instruction(s).
-
-<<ENTRYPOINT and CMD>> define the instructions and command line arguments used to launch a container.  They define what is initially executed when the container is first launched.  In practice, these commands can only access environment variables, but there are tricks in which <<argument-variables,argument variables>> can be passed to these commands which will be demonstrated in the <<Practical Lab (~20 mins), lab below>>.
-
-==== USER and WORKDIR
-
-<<USER>> and <<WORKDIR>> affect both build and container runtimes.  Whenever either is set, build instructions will execute as if by the defined user and/or in the defined working directory.  When the container launches, that last user and working directory defined is used.
-
-{back_to_toc}
-
-===== Container security
-
-It goes without saying that good security practices should always be followed when writing code, and Dockerfiles are no exception.  While your applications may look and feel that they're not running on the host machine when a container is launched, it is important to remember they are running on a host.
-
-WARNING: The OCI runtime container environment is isolated, but *NOT* secure.  Unless needed, always define a unprivileged USER before declaring your <<ENTRYPOINT and CMD, ENTRYPOINT or CMD>>; e.g. `USER 1001`.
-
-{back_to_toc}
-
 ==== WORKDIR
 
   WORKDIR <path>
 
-Set the containers working directory.  WORKDIR may be used multiple times in a Dockerfile.  The initial WORKDIR is whatever was the last value in the <<FROM,base image>>.  If no WORKDIR has ever been set, it's the root directory, `/`.  Relative paths are relative to the current working directory.
+Set the containers working directory.  WORKDIR may be used multiple times in a Dockerfile.  The initial WORKDIR is whatever was the last value defined in the <<FROM,base image>>.  If no WORKDIR has ever been set, it's the root directory, `/`.  Relative paths are relative to the current working directory.
 
   WORKDIR /app
   WORKDIR resources
@@ -327,9 +344,40 @@ Set the containers working directory.  WORKDIR may be used multiple times in a D
 
 Output of the above with be `/app/resources`.
 
-===== Windows OS
+{back_to_toc}
 
+[#ENTRYPOINT and CMD]
+==== ENTRYPOINT and CMD
 
+  CMD <command> <param1> ...
+  CMD ["<command>", "<param1>", ...]
+  CMD <param1> ...
+  CMD ["<param1>, ..."]
+
+  ENTRYPOINT <command>, param1 ...
+  ENTRYPOINT ["<command>", "param1", ...]
+
+ENTRYPOINT and CMD define the commands and parameters that run and are used when the container is launched.
+
+These instructions are defined as follows:
+
+* ENTRYPOINT - defines the executable to start when your container launches.  Defaults to `/bin/sh -c`. 
+
+* CMD - The list of arguments to pass to the `ENTRYPOINT`.  Can easily be overridden on the command line.
+
+Since ENTRYPOINT defaults to launching a shell and taking a script as an argument, only defining CMD will work, but it creates unnecessary overhead.
+
+  # passes "echo", "-n", and "howdy" as arguments to the ENTRYPOINT
+  podman run alpine echo -n howdy
+
+  # overrides the ENTRYPOINT with "echo" and passes 
+  podman run --entrypoint "echo" busybox -n howdy
+
+In the above examples, the ENTRYPOINT is explicitly overridden by the `--entrypoint` flag, whereas the CMD values are implied by the arguments a the end.
+
+TIP: Use ENTRYPOINT to define the executable and required parameters that will run when the container is launched.  Use CMD to list optional and/or default arguments that can be overridden on the command line.
+
+Compare this with <<RUN>>, which defines commands that only execute during the build.
 
 {back_to_toc}
 
@@ -337,7 +385,7 @@ Output of the above with be `/app/resources`.
 
 include::_posts/snippets/terminal-tip.adoc[]
 
-The following is a very short lab that will teach you how to build images using Dockerfiles, and run those images as containers.  It will also demonstrate how to externalize your container’s configuration in order to realize the full benefits of container development and “Build once, deploy many”.
+The following lab that will teach you how to build images using Dockerfiles, view info on the images, and run those images as containers.  It will also demonstrate scalability, and externalizing configuration from the container to demonstrate the principle of "Build once, deploy many".
 
 {back_to_toc}
 
@@ -378,7 +426,7 @@ The following is a very short lab that will teach you how to build images using 
 
     ... The <strong><code>COPY<sup>1</sup>`* statement (line 9) copies the JAR file created by the Spring Boot Maven build into our image.  For the convenience of users that are running in the Red Hat sandbox, which doesn’t have Java or Maven installed, I have pre-built the JAR file and pushed it to the hello-world-container-lab repo.  There is no need to do a Maven build in this lab.
 
-    ... Finally, the *<code>ENTRYPOINT<sup>2</sup>`* statement defines the command and arguments that should be executed in the container when the container starts up.  If this image ever becomes a base image for a subsequent image definition and a new `ENTRYPOINT` is defined, it will override this one.
+    ... Finally, the **<code>ENTRYPOINT<sup>2</sup>`** statement defines the command and arguments that should be executed in the container when the container starts up.  If this image ever becomes a base image for a subsequent image definition and a new `ENTRYPOINT` is defined, it will override this one.
     ... Type `:q`  and hit enter to quit the Dockerfile and return to the shell.
 
 . Build the image:

@@ -15,7 +15,7 @@
 # in the templates via {{ site.myvariable }}.
 
 title: The Hippy of Dev
-subtitle: The technical musings of Evan "Hippy" Slatis
+subtitle: Spreading Hip Snippets of Dev to One and All
 author:
   name: Evan "Hippy" Slatis
   email: hippyod+labs@gmail.com
@@ -36,6 +36,7 @@ header_pages:
 plugins:
 - jekyll-feed
 - jekyll-seo-tag
+- jekyll-sitemap
 - jekyll-asciidoc
 
 load_paths:
