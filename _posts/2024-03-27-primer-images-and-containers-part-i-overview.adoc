@@ -3,9 +3,9 @@ liquid: true
 
 layout: post
 title: |-
-  An Images and Containers Primer for App Devs, Part I: Overview
+  Understanding Images and Containers
 subtitle: |-
-  A conceptual overview of images and containers for application developers
+  The App Devs Primer on Images and Containers, Part II
 description: |-
   Part I in a series of short primers specifically geared towards software developers.  This installment covers the basic
   concepts of images and containers, and why and how they can useful to the average software developer.

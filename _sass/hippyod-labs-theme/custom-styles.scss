@@ -12,7 +12,11 @@
   border-bottom: 5px groove #c33020;
 }
 
-.site-footer {
-  
-  border-top: 5px groove #c33020;
+::-webkit-scrollbar {
+  height: 7px;
+  width: 7px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #aaaaaa;
 }

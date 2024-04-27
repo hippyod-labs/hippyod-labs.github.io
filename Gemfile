@@ -23,6 +23,7 @@ group :jekyll_plugins do
   gem "jekyll-feed", "~> 0.17.0"
   gem "jekyll-seo-tag", "~> 2.1"
   gem 'jekyll-sitemap', "~> 1.4.0"
+  gem "jekyll-redirect-from", "~> 0.16.0" 
   gem "jekyll-asciidoc", "~> 3.0.1" 
 end
 

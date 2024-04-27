@@ -1,0 +1,27 @@
+ifndef::env-github[]
+:caution-caption: ☠
+:important-caption: ❗
+:note-caption: 🛈
+:tip-caption: 💡
+:warning-caption: ⚠
+ifdef::env-github[]
+:caution-caption: :fire:
+:important-caption: :exclamation:
+:note-caption: :paperclip:
+:tip-caption: :bulb:
+:warning-caption: :warning:
+endif::[]
+
+:back_to_top_target: top-target
+:back_to_top_label: ⬆ Table of Contents
+:back_to_toc: <<{back_to_top_target},{back_to_top_label}>>
+
+[#{back_to_top_target}]
+
+:toc: macro
+:toc-title:
+:toclevels: 4
+:source-highlighter: highlightjs
+:sectlinks:
+
+toc::[]
