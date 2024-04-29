@@ -24,21 +24,21 @@ include::_posts/snippets/standard-header.adoc[]
 
 * **<<Images,OCI Images>> are binary software packages.**
 +
-Images contain a **complete** set of dependencies needed to run an application, up to and including an operating system.
+Images are binary software packages designed to contain a **complete** set of dependencies needed to run an application, up to and including the base operating system.
 
 * **<<Containers>> are processes launched from images.**
 +
-Containers are runtime processes created from images that run in isolation from each other with their own filesystems, cpu, memory.
+Containers are runtime processes created from images that run in isolation from each other with their own filesystems, cpu, and memory.
 
 {back_to_toc}
 
 === Audience and scope
 
-This is the first of a series of three primers and two short labs that will describe and teach Open Container Initiative (OCI, or “Docker”) image and container technology, and they were written specifically with the **application developer** in mind.  This is not meant to give anyone a complete or thorough understanding of the technology, but rather a good overview of the concepts, how it benefits application developers, and the practical knowledge needed to use it.
+This is the first of a series of three primers and two short labs that will describe and teach Open Container Initiative (OCI, or “Docker”) image and container technology, and they were written specifically with the **application developer** in mind.  This is not meant to give anyone a complete or thorough understanding of the technology, but an overview of the concepts, how it benefits application developers, and the practical knowledge needed to use it.
 
-Not everything contained in Part I will be necessary for an application developer to do their job, but is presented because it's helps in the overall understanding of the technology and what it's doing.  For example, it's important to understand <<Image layers,image layers>>, because they will influence how Dockerfiles are written (the scripts that define how images are built), but not so much <<Blobs,blobs>>.  The reason we take a sentence or two to explain blobs is that they show up on the command line when pulling images, so understanding what they are helps to understand what the CLI is doing when executing certain commands.  For topics that are not germane to day-to-day work we try to be as brief as possible.
+Not everything contained in Part I will be necessary for an application developer to do their job, but is presented because it's helps in the overall understanding of the technology and what it's doing.  For example, it's important to understand <<Image layers,image layers>>, because they will influence how Dockerfiles are written (the scripts that define how images are built), but not so much <<Blobs,blobs>>.  The reason we take a sentence or two to explain blobs is that they show up on the command line when pulling images, so understanding what they are helps to understand what the CLI is doing when executing certain commands.  For topics that are not germane to day-to-day work we try to be as brief as possible, and links to other resources are provided for those that want a more in depth understanding.
 
-We estimate all three primers can be read and both labs completed in ~2 hrs, depending on experience.  Links are interspersed throughout if deeper understanding of individual topics is wanted or required.
+NOTE: Estimated time to read all three primers and complete labs: ~3 hrs, depending on experience.
 
 {back_to_toc}
 
@@ -50,7 +50,7 @@ The technology for creating images and containers has existed for decades, but h
 
 == Images
 
-**_OCI images_** are nothing more than a binary packaging format for software, loosely comparable to a Java JAR, Python wheel, or npm package.  JAR files are simply zip files with a different extension, and Python wheels are distributed as gzipped tarballs, for example.  Like Python wheels, images are packaged as gzipped tarballs (tar.gz).
+**_OCI images_** are nothing more than a binary packaging format for software, loosely comparable to a Java JAR, Python wheel, or npm package.  JAR files are simply zip files with a different extension, and Python wheels are distributed as gzipped tarballs, for example.  Like Python wheels, images are packaged as https://en.wikipedia.org/wiki/Tar_(computing)[gzipped tarballs^] (tar.gz).
 
 **Each image has its own, independent filesystem that contains a complete set of dependencies needed to run an application**.  In practice this usually includes a complete facade of an operating system.  Because images contain so much extra software than traditional packaging strategies, they will be much larger in size.
 
@@ -62,19 +62,19 @@ The technology for creating images and containers has existed for decades, but h
 
 === Image layers
 
-Images are comprised of a set of read-only __layers__ stacked one on top of the other.  **Image layers represent a change to an image's filesystem.**  This is loosely similar to a Git commit, which represents an atomic change to a set of files in a Git repository.  The utilities used to build and pull images can cache image layers, so similar images that use the same layers can be built faster and don't have to pull the layer for every new image that shares it.
+Images are comprised of a set of read-only __layers__ stacked one on top of the other.  **Image layers represent a change to an image's filesystem.**  This is loosely similar to a Git commit, which represents an atomic change to a set of files in a Git repository.  The utilities used to build and pull images can cache image layers, so similar images that use the same layers can be built faster and don't have to repeated download or rebuild the layer for every new image that shares it.
 
 {back_to_toc}
 
 ==== Blobs
 
-Image layers are stored in low-level, unnamed tar.gz files called **blobs**, which we only mention because you will see this term when pulling images on the command line.  Blobs are referenced by their _digests_ or hash.
+Image layers are stored in low-level, unnamed tar.gz files called **blobs**, which we only mention because you will see this term when pulling images on the command line.  Blobs are referenced internally by their _digests_ or hash.
 
 {back_to_toc}
 
 === Base images
 
-Like classes in object-oriented languages, images can be used to create new images.  **Base images** are images used to build other images.  The new image's layers are stacked on top of the base to create the new image.
+Like classes in object-oriented languages, images can be built upon to create new images.  **Base images** are images used to build other images.  The new image's layers are stacked on top of the base to create the new image.
 
 Taking the object-oriented analogy a step further, images and their base images have a loose inheritance structure.  When a new image is built on top of another image, it initially "inherits" everything from its base image, and it will keep the properties of the base image unless they are specifically overridden by the new image build.
 
@@ -82,7 +82,7 @@ Taking the object-oriented analogy a step further, images and their base images 
 
 ==== Minimal base images
 
-Base images tend to be larger than they need to be, because to be reusable to a wide variety of applications they necessarily contain extra software that won't be used by a particular application.  There are many different communities dedicated to building minimal OCI images fo one type or another in an attempt to keep their own image size as minimal as possible.  **Minimizing application image size is a best practice.**
+Base images tend to be larger than they need to be, because to be reusable to a wide variety of applications they necessarily contain extra software that won't be used by some particular application.  Larger images means it takes longer to download from remote repositories, and takes up more system resources.  There are many different communities dedicated to building minimal OCI images of one type or another for use as base images.  **Minimizing an application's image size is a best practice,** so it's best to use these smaller base images when available.
 
 {back_to_toc}
 
@@ -94,17 +94,21 @@ The most fundamental of base images is called **{scratch-link}[_scratch_^]**.  S
 
 ===== Minimalist image examples
 
-Both https://hub.docker.com/_/alpine[Alpine^] and https://hub.docker.com/r/redhat/ubi9[Red Hat's UBI 9^] images represent minimalist approaches to building base images; i.e. they contain a minimal install of software to reduce the overall size on disk of the image.  Minimalist images are a good practice for use as a base image when building your own images, because among other things smaller images will improve network performance when anyone (pulls) downloads the image.
+The following are a couple of examples of commonly used, minimalist base images:
+
+* https://hub.docker.com/_/alpine[Alpine^]
+
+* https://hub.docker.com/r/redhat/ubi9[Red Hat's Universal Base Image^] (UBI)
 
 {back_to_toc}
 
 === So what about virtual machines?
 
-Virtual machine images re designed to virtualize hardware.  OCI images are only designed to package software.  This makes virtual machines much larger and heavier than their OCI counterparts, and startup times are significantly slower; i.e.
+VM and OCI images are completely different technologies with very different goals.  Virtual machine images are designed to virtualize hardware.  OCI images are only designed to package software. In particular, virtual machines images are
 
-* Virtual machines images take up more resources
-* Take longer to download
-* Take longer to start
+* Much larger in size
+* Take much longer to download
+* Take much longer to start
 
 Unless direct access to hardware is needed, in every metric packaging and running an application in an OCI image versus a VM results in a vast improvement in performance and resource usage.
 
@@ -128,7 +132,7 @@ The following are examples of different public Image registries, and are free to
 * https://quay.io[Red Hat Quay^] +
   Red Hat’s public image registry, which hosts many of Red Hat’s publicly available images, along with providing opportunities for individuals to host their own images.  It is also available for https://www.projectquay.io/[download for free use], since everything Red Hat produces is OSS.
   
-https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry[GitHub] and https://docs.gitlab.com/ee/user/packages/container_registry/[GitLab] have options for storing your images with your Git repositories, but their primary purpose as a platform is for Git version control.
+https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry[GitHub] and https://docs.gitlab.com/ee/user/packages/container_registry/[GitLab] also have options for storing images with Git repositories, but their primary purpose as a platform is for Git version control.
 
 {back_to_toc}
 
@@ -144,13 +148,13 @@ The **_image manifest_** is a JSON document containing information about the ima
 
 The **_image digest** is a unique unique sha256 hash based on the image manifest when the image is created.
 
-Repeating the same image build with no other changes will result in the exact same hash.  Image digest have the form of `<algorithm>:<64 digit hex>`; e.g.:
+Repeating the same image build with no other changes will result in the exact same hash.  Image digests have the form of `<algorithm>:<64 digit hex>`; e.g.:
 
   sha256:c5b1261d6d3e43071626931fc004f70149baeba2c8ec672bd4f27761f8e1ad6b
   
 Although you'll almost always pull images using a repository name and <<Image Tags,tag>>, you can also use its digest, and you will occasionally see images referenced by their digest in order to guarantee which build of an image is being pulled.
 
-TIP: Images also have an "ID", but you can safely ignore them.  They are local values and of no real importance to end users.
+NOTE: Images also have an "ID", but you can safely ignore them.  They are local values used by the OCI tooling and of no real importance to end users.
 
 {back_to_toc}
 
@@ -158,31 +162,29 @@ TIP: Images also have an "ID", but you can safely ignore them.  They are local v
 
 While the image digest guarantees a unique identifier between different image builds, it is not very meaningful or convenient to human beings trying to understand what each specific image was built for, which is the purpose of image **_tags_**.  Image tags allow developers to easily name and identify each separate image within a repository.  Image tags are analogous to Git tags in that they attach a human readable identifier to a particular hash.
 
-Tags have a many-to-one relationship with images and their digests; i.e. a single image digest can be referenced by any number of tags, or none at all.  A common example are builds that are tagged for deployment 
-
-Image tags are not necessarily unique to the underlying image; e.g. when promoting an image from DEV to QA, and assuming you keep both images in the same registry and repository, you're just creating another named reference to same digest.  On the other hand, the image underneath could be something completely different with no relation to the first image besides the repository they are in.  The only way you tell if they are the same or different is to compare their digest.
+Tags have a many-to-one relationship with images and their digests; i.e. a single image digest can be referenced by any number of tags, or none at all.  A common example are builds that are tagged for deployment across multiple development environments; e.g. as an image is built, deployed, and promoted from dev (DEV) to functional testing (QA or QAT) to user-acceptance testing (UAT) environments as part of a typical software development lifecycle, the image might gather the tags of dev, qat, and uat, respectively.
 
 {back_to_toc}
 
 ====== latest
 
-By default, any untagged image pushed to a repository is automatically given the tag _latest_.  This tag can also be given to an image explicitly.  If you refer to an image repository without a specific tag, it will refer to the _latest_ by default.  Just like with application build and dependency management tools (e.g. Maven, Pip, or npm), best practices are that you should always refer to a specific image tag (or digest) and not just to _latest_, or unpredictable builds and behavior could result.  During development and/or local testing it can be a convenient shortcut, though.
+By default, any untagged image pushed to a repository is automatically given the tag _latest_.  This tag can also be given to an image explicitly.  Conversely, if you pull an image with specifying the tag, it will try and pull _latest_ by default.  Just like with application build and dependency management tools (e.g. Maven, Pip, or npm), best practices are that you should always refer to a specific image tag (or digest) and not to _latest_, or unpredictable builds and behavior could result.  During development and/or local testing it can be a convenient shortcut, though.
 
 {back_to_toc}
 
-==== Image registries are **NOT** version control systems
+===== Image repositories do **NOT** support version control
 
-Because we expect software developers to be very familiar with version control system we have made use of those analogies to better communicate some of the concepts inherent in Image registries and repositories; however, it is important to remember that **Image registries are NOT a version control systems**. 
+Because we expect software developers to be very familiar with version control systems we have made use of those analogies to better communicate some of the concepts inherent in Image registries and repositories; however, it is important to remember that **image repositories do NOT track changes** to images or tags. 
 
 This can become confusing to developers new to OCI image technology, because the workflows and terms appear very similar on the surface.  As changes to source code are "pushed" to a Git repository, a new build is typically kicked off, which in turn results in an image incorporating the new application artifacts being "pushed" to its image repository and tagged exactly the same as the last build; e.g. as `my_app:dev`.  Looking at the source branch in the Git repository and image tag in the image repository, both have new hashes associated with them.  The difference is the Git commit hash represents a **change** in the source code, whereas the image digest represents **a completely different image** with no relation to the previous one.
 
-In this sense Git tags and image tags are very much alike, because if you "move" a Git tag from one commit to the another, no record is kept by Git of the commit hash it used to point to.  In Git this is generally considered a bad practice, but, again, Git is a **distributed version control system** and not a **centralized digital warehouse** for storing OCI images.
+In this sense Git tags and image tags are very much alike, because if you "move" a Git tag from one commit to the another, no record is kept in Git of the commit hash it previously pointed to.  In Git this is generally considered a bad practice, but, again, Git is a **distributed version control system** and not a **centralized digital warehouse** for storing OCI images.
 
 {back_to_toc}
 
 === Example: eclipse-temurin on Docker Hub
 
-As mentioned above, https://hub.docker.com/[Docker Hub^] is a public image registry that hosts a number of official Image repositories free for download, one of which is https://hub.docker.com/_/eclipse-temurin[eclipse-temurin^].  eclipse-temurin is one of many Image repositories containing official builds of OpenJDK images for building or running Java applications.  A quick look at their tags reveals dozens of OpenJDK images that hold different combinations of Java and/operating system versions; e.g.:
+As mentioned above, https://hub.docker.com/[Docker Hub^] is a public image registry that hosts a number of official Image repositories free for download, one of which is https://hub.docker.com/_/eclipse-temurin[eclipse-temurin^].  eclipse-temurin is one of many Image repositories containing official builds of OpenJDK images for building or running Java applications.  A quick look at their tags reveals dozens of OpenJDK images that hold different combinations of Java and operating system versions; e.g.:
 
 * https://hub.docker.com/layers/library/eclipse-temurin/11-jdk-alpine/images/sha256-61afd0f57214c2b8d8daffe7eeb588f025c5bb7c68e1aac23682c6ddf4044241[11-jdk-alpine^]
 
@@ -190,7 +192,7 @@ As mentioned above, https://hub.docker.com/[Docker Hub^] is a public image regis
 
 * https://hub.docker.com/layers/library/eclipse-temurin/17-ubi9-minimal/images/sha256-579ec7b8840262284b50accf46f5777121fa4f8cca00f5661165de7851e6d334[17-ubi9-minimal^]
 
-The first represents Java 11 installed on an https://hub.docker.com/_/alpine[Alpine] image, a family of OCI images based on Alpine Linux.  The latter two are represent the Java 11 and 17 JDK installed on https://hub.docker.com/r/redhat/ubi9[Red Hat's UBI 9^] image, respectively.
+The first represents Java 11 installed on an https://hub.docker.com/_/alpine[Alpine] image, a family of OCI images based on Alpine Linux.  The latter two represent the Java 11 and 17 JDKs installed on https://hub.docker.com/r/redhat/ubi9[Red Hat's UBI 9^] image, respectively.
 
 {back_to_toc}
 
@@ -199,10 +201,10 @@ The first represents Java 11 installed on an https://hub.docker.com/_/alpine[Alp
 Whereas images are executable binary files, **_containers_** are the processes running on the host created from images.  Running a container is actually a two step process, create and start.
 
 * **Create** +
-  Creating a container takes an image and gives it a unique ID and filesystem.  The facilitates being able to run the same image multiple times.
+  Creating a container takes an image and gives it a unique ID and filesystem, which facilitates being able to run the same image multiple times.
 
 * **Start** +
-  Starting a container will launch an isolated process on the host machine.  The application running inside the container will behave as if it’s running in its very own virtual machine with it's own filesystem.
+  Starting a container will launch a process on the host machine.  The application running inside the container will be isolated from the rest of the system and behave as if it’s running in its very own host with it's own filesystem.
 
 {back_to_toc}
 
@@ -210,8 +212,8 @@ Whereas images are executable binary files, **_containers_** are the processes r
 
 From the software developer’s perspective, containers have two very important traits that give them advantage over other forms of packaging and deploying your application:
 
-. Consistency
-. Scalability
+* Consistency
+* Scalability
 
 Both are related to each other, and together they allow projects to use one of the most promising innovations to come to software development in recent years, the principle of **“Build once, deploy many”**.
 
@@ -221,11 +223,11 @@ Both are related to each other, and together they allow projects to use one of t
 
 _No more “But it works on my machine”_
 
-Because images are immutable and include all of the dependencies needed to run your software from the operating system on up, the environment you deploy your application has now become consistent.  This means whether you launch an image as a container in a development, test, or any number of production environments, the container will run exactly the same way.  As a application developer, you won’t have to worry about where your application is running, because it's always the same.  That’s the benefit of packaging your software along with its complete runtime environment, rather than just your application without the total set of dependencies needed to run it.
+Because images are immutable and include all of the dependencies needed to run your software from the operating system on up, the environment you deploy your application has now become consistent.  This means whether you launch an image as a container in a development, test, or any number of production environments, the container will run exactly the same way.  As a application developer, you won’t have to worry about _where_ your application is running, because it's always the same.  That’s the benefit of packaging your software along with its complete runtime environment, rather than just your application without the total set of dependencies needed to run it.
 
-This consistency means that in almost all cases when an issue is found in one environment (e.g. production), you can be reasonably confident that you’ll be able to reproduce the issue or some other environment (e.g. DEV or QA) so you can confirm the behavior and focus on fixing it.  In general, your project should never get mired in and stumped by the dreaded “Works on my machine” problem again due to difference in how the application is deployed.
+This consistency means that in almost all cases when an issue is found in one environment (e.g. production), you can be reasonably confident that you’ll be able to reproduce the issue in some other environment (e.g. development or test) so you can focus on fixing it.  In general, your project should never get mired in and stumped by the dreaded “Works on my machine” problem again due to differences in how the application is deployed.
 
-CAUTION: Just because containers ensure the environment your application is deployed to is always the same, that does not mean it will have the same configuration; e.g. development and production are rarely deployed with the same configuration.  Containers can drastically minimize the problem, but cannot eliminate the issue completely.
+CAUTION: Just because containers ensure the environment your application is deployed to is always the same, that does not mean it will have the same configuration; e.g. development and production are rarely deployed with the same configuration, the .  Containers can drastically minimize the problem, but cannot eliminate the issue completely.
 
 {back_to_toc}
 
@@ -233,19 +235,19 @@ CAUTION: Just because containers ensure the environment your application is depl
 
 From the host system's perspective, each container is an independent process.  From the application's perspective, each container it runs in is a separate host system with its own, independent filesystem.  As mentioned earlier, containers are relatively lightweight and can startup rather quickly, which means that if you designed your software appropriately you can easily and quickly spin up as many copies of your application as your host machine will allow.  This is called **_horizontal scaling_**.
 
-NOTE: Vertical scaling involves increasing a container's internal resources such CPU or memory, and while it can be done it is outside the scope of these primers.
-
 It's also very easy to scale back down again by simply stopping the unneeded containers.  They're just running processes.
 
-To take advantage of scaling easily, applications still need to be designed to handle it.  We suggest following the https://en.wikipedia.org/wiki/REST[REST^] architectural style in particular to most easily take full advantage of this feature.
+To take advantage of scaling easily, applications still need to be designed properly to handle it.  We suggest following the https://en.wikipedia.org/wiki/REST[REST^] architectural style in particular to most easily take full advantage of this feature.
+
+NOTE: **_Vertical scaling_** involves increasing a container's internal resources such CPU or memory, and while it can be done it is not a design or deployment issue that application developers would be concerned with, and is therefore outside the scope of these primers.
 
 {back_to_toc}
 
 ==== Are containers secure?
 
-TLDR: no.
+TL;DR: **no**.
 
-Containers run in loose isolation from the point of view of the host system and each other, but they are not built with security in mind.  We will discuss how to mitigate this issue in more detail when we describe how to write image definitions using Dockerfiles in a later primer.
+Containers run in isolation from the point of view of the host system and each other, but they are not built with security in mind.  We will discuss how to mitigate this issue in more detail when we describe how to write image definitions using Dockerfiles in a later primer.
 
 {back_to_toc}
 
@@ -257,7 +259,7 @@ These are the main points presented in this primer:
 
 ** They contain all the software dependencies needed to run the application.
 
-** They are stored and shared from <<Image registries,registries>> and <<Image registrirepositorieses,repositories>>.
+** They are stored and shared from <<Image registries,registries>> and <<Image repositories,repositories>>.
 
 * <<Containers>> are application runtime processes created from images.
 
@@ -266,6 +268,8 @@ These are the main points presented in this primer:
 ** They provide consistency across all deployment environments.
 
 ** They are easily scalable.
+
+** They do not run in a secure sandbox.
 
 {back_to_toc}
 
