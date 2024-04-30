@@ -21,29 +21,35 @@ include::_posts/snippets/standard-header.adoc[]
 
 == Overview
 
-There are two competing utilities for building and running containers, *_https://podman.io/docs/installation[Podman^]_* and *_https://docs.docker.com/get-docker/[Docker^]_*.  They are available for Windows, Linux, and Macs, and from the end users point of view, they are completely equivalent when it comes to executing commands; i.e. they can be considered aliases of one another.  On *nix-based systems, `alias docker=podman` will work almost all of the time if only Podman is installed when using basic commands for building images or running containers.
+There are two competing utilities for building and running containers, *_https://podman.io/docs/installation[Podman^]_* and *_https://docs.docker.com/get-docker/[Docker^]_*.  They are available for Windows, Linux, and Macs, and from the end users point of view, they are completely equivalent when it comes to executing commands; i.e. they can be considered aliases of one another.  On *nix-based systems, `alias docker=podman` will work if only Podman is installed when using basic commands for building images or running containers.
 
-NOTE: Because we feel that <<Fundamental differences between Docker and Podman, Podman is the better tool technologically>>, all commands will only reference `podman`; however, because Docker and Podman are functionally and semantically equivalent when it comes to the basic commands for building and running images and containers, **wherever `podman` is mentioned in this document, `docker` can be safely substituted with no change in meaning or outcome.**
+NOTE: Because we feel that <<Fundamental differences between Docker and Podman, Podman is the better tool technologically>>, this primer will only reference `podman` in the terminal; however, because Docker and Podman are functionally and semantically equivalent when it comes to the basic commands for building and running images and containers, **wherever `podman` is mentioned in this document, `docker` can be safely substituted with no change in meaning or outcome.**
 
-This primer assumes the reader is familiar with the basic concepts behind OCI images and containers.  If not, we suggest reading link:{% post_url 2024-03-27-primer-images-and-containers-part-i-overview %}[Part I^] of this series to cover those topics before continuing.
+This primer assumes the reader is familiar with the basic concepts behind OCI images and containers.  If not, we suggest reading link:{% post_url 2024-03-27-primer-images-and-containers-part-i-overview %}[Part I^] of this series first to cover those topics before continuing.
 
 {back_to_toc}
 
 === Common Subcommands
 
-The following are a sampling of the most commonly used https://docs.podman.io/en/latest/Commands.html[Podman subcommands^].  Many are shorthand for `podman [image|container] <command>`, depending on whether you are referring to an image or container.  Each subcommand below links to the official documentation for more details.
+The following are a sampling of the most commonly used https://docs.podman.io/en/latest/Commands.html[Podman subcommands^].  Many are shorthand for `podman image <command>` or `podman container <command>`.  Each subcommand listed below links to the official documentation for complete information.
 
-* https://docs.podman.io/en/v3.0/markdown/podman-build.1.html[build^] - build an image.
+==== https://docs.podman.io/en/v3.0/markdown/podman-build.1.html[build^]
+
+Build an image.
 
   # build an image tagged as some-tag for image repository some-image-repo
-  # using a file named Dockerfile in the current directory
+  # assumes a file named Dockerfile in the current directory
   podman build -t some-image-repo:some-tag .
 
   # build an image tagged as some-tag for image repository some-image-repo
   # using a file named my-dockerfile.base-image in the current directory
   podman build --tag some-image-repo:some-tag --file my-dockerfile.base-image
 
-* help - Help about any subcommand.
+{back_to_toc}
+
+==== help
+
+Help about any subcommand.
 
   # print a list of Podman's subcommands and options available with every subcommand
   podman help
@@ -51,7 +57,11 @@ The following are a sampling of the most commonly used https://docs.podman.io/en
   # get help with the container ls subcommands
   podman help container ls
 
-* https://docs.podman.io/en/v3.0/markdown/podman-history.1.html[history^] - Print the history of an image, which includes information on each layer in the image, its size, and how it was created.
+{back_to_toc}
+
+==== https://docs.podman.io/en/v3.0/markdown/podman-history.1.html[history^]
+
+Print the history of an image, which includes information on each layer in the image, its size, and how it was created.
 
   # print the history of the python:alpine image
   podman history python:alpine
@@ -65,12 +75,25 @@ The following are a sampling of the most commonly used https://docs.podman.io/en
   # print the manifest of the python:alpine image
   python inspect python:alpine
 
+{back_to_toc}
+
+[#podman-kill]
+==== https://docs.podman.io/en/latest/markdown/podman-kill.1.html[kill^]
+
+Forcibly kill the main process in one or more running containers.  Less graceful than <<podman-stop,stopping>> a container.
+
+  # kill container_a and container_b
+  podman kill container_a container_b
+
 * https://docs.podman.io/en/v3.0/markdown/podman-ps.1.html[ps^] - Lists all running containers.  Shorthand for `podman container list`.
 
-+
-NOTE: For those unfamiliar with Shell, the `ps` command lists running processes.
+  podman ps
 
-* https://docs.podman.io/en/v3.0/markdown/podman-pull.1.html[pull^] - Pull an image from an image registry.
+{back_to_toc}
+
+==== https://docs.podman.io/en/v3.0/markdown/podman-pull.1.html[pull^]
+
+Pull an image from an image registry.
 
   # pull the busybox image
   podman pull busybox
@@ -83,14 +106,22 @@ Docker Hub uses aliases for many of the common, official images it hosts; e.g.
 * https://www.alpinelinux.org/about/[_alpine_^] - minimalist image based on musl libc and busybox.
 ====
 
-* https://docs.podman.io/en/v3.0/markdown/podman-push.1.html[push^] - Push an image to an image registry.
+{back_to_toc}
+
+==== https://docs.podman.io/en/v3.0/markdown/podman-push.1.html[push^]
+
+Push an image to an image registry.
 
   # Push the image myimage:dev to Docker Hub under the account "username"
   podman push myimage:dev docker.io/username/myimage:dev
 
   podman ps
 
-* https://docs.podman.io/en/v3.0/markdown/podman-rm.1.html[rm^] - Delete a container.
+{back_to_toc}
+
+==== https://docs.podman.io/en/v3.0/markdown/podman-rm.1.html[rm^]
+
+Delete a container.
 
   # delete my_container if it's already stopped
   podman rm my_container
@@ -101,7 +132,11 @@ Docker Hub uses aliases for many of the common, official images it hosts; e.g.
   # delete all containers
   podman rm --all
 
-* https://docs.podman.io/en/v3.0/markdown/podman-rmi.1.html[rmi^] - Delete a local image.  Only works if no containers based on the image exist.  Short for `podman image rm`.
+{back_to_toc}
+
+==== https://docs.podman.io/en/v3.0/markdown/podman-rmi.1.html[rmi^]
+
+Delete a local image.  Only works if no containers based on the image exist.  Short for `podman image rm`.
 
   # delete the python:apline image
   podman rmi python:apline
@@ -109,14 +144,32 @@ Docker Hub uses aliases for many of the common, official images it hosts; e.g.
   # delete all locally stored images
   podman rmi --all
 
+{back_to_toc}
+
 [#podman-run]
-* https://docs.podman.io/en/v3.0/markdown/podman-run.1.html[run] - Run a container.  Run is shorthand for `podman https://docs.podman.io/en/v3.0/markdown/podman-create.1.html[create^]` and `podman https://docs.podman.io/en/v3.0/markdown/podman-start.1.html[start^]`.
+==== https://docs.podman.io/en/v3.0/markdown/podman-run.1.html[run]
+
+Run a container.  Run is shorthand for `podman https://docs.podman.io/en/v3.0/markdown/podman-create.1.html[create^]` and `podman https://docs.podman.io/en/v3.0/markdown/podman-start.1.html[start^]`.
 
   # Launches a container based on the busybox image with an interactive
   # shell terminal
   podman run -i -t busybox /bin/sh
 
-* https://docs.podman.io/en/v3.0/markdown/podman-tag.1.html[tag] - Optionally rename and/or tag an image.  If no tag follows the ":", defaults to "latest".
+{back_to_toc}
+  
+[#podman-stop]
+==== https://docs.podman.io/en/latest/markdown/podman-stop.1.html[stop^]
+
+Stop the main process in one or more running containers.  A more graceful request than <<podman-kill,kill>>.
+
+  # stop container_a and container_b
+  podman stop container_a container_b
+
+{back_to_toc}
+
+==== https://docs.podman.io/en/v3.0/markdown/podman-tag.1.html[tag]
+
+Optionally rename and/or tag an image.  If no tag follows the ":", defaults to "latest".
 
   # Completely rename the image
   podman mylocalimage:some-tag myorg/some-other-name:some-other-tag
@@ -128,40 +181,39 @@ Docker Hub uses aliases for many of the common, official images it hosts; e.g.
   podman 05455a08881e some-other-image-name:v1.0
   podman inspect alpine
 
-
 {back_to_toc}
 
 === Fundamental differences between Docker and Podman
 
-**Docker is a daemon** in *nix based systems, and a service in Windows.  This means it runs in the background all the time, and it runs with root or administrator privileges.
+**Docker is a daemon in *nix based systems, and a service in Windows**.  This means it runs in the background all the time, and it runs with root or administrator privileges.
 
 **Podman is binary utility.**  This means it runs only on demand, and can be run with an unprivileged user.
 
-Besides being more efficient with system resources (why run all the time if you don’t have to?), this makes Podman more secure.  Running anything with root/admin privileges is by definition less secure.
+Besides being more efficient with system resources, this makes Podman more secure.  Running anything with root/admin privileges is by definition less secure.
 
 {back_to_toc}
 
-==== Podman Related utilities
+=== Related utilities
 
 While Docker is a singular tool, Podman exists within a suite of utilities that are maintained by the *https://github.com/containers[Containers^]* community on GitHub.  Two of these utilities that are worth mentioning here are *_https://github.com/containers/skopeo/blob/main/install.md[Skopeo^]_* and *_https://github.com/containers/buildah[Buildah^]_*.
 
 {back_to_toc}
 
-===== Buildah
+==== Buildah
 
-For the most part, builds can be executed through Docker and Podman, but Buildah exists in case more complicated builds of images are required than what Podman/Docker can provide through Dockerfiles.  Buildah can also build Dockerfiles.  Complex image builds without a Dockerfile are outside the scope of this primer, and application developers should never need this functionality, but we mention it here for completeness.
+For the most part, builds can be executed through Docker and Podman, but Buildah exists in case more complicated builds of OCI images are required than what Podman/Docker can provide through Dockerfiles.  Buildah can also build Dockerfiles.  Complex image builds without a Dockerfile are outside the scope of this primer, and application developers should never need this functionality, but we mention it here for completeness.
 
 {back_to_toc}
 
-===== Skopeo
+==== Skopeo
 
-Skopeo exists to help manage images in remote registries; e.g. copy from one remote registry to another, remote image tagging, or deleting from a remote registry.  Podman only recently added the capability of copying and tagging remote images via `podman scp`, but only skopeo can delete a remote image.  Copying, tagging, and deleting remote images are more DevOps than application developer and therefore our of scope for this primer, but we mention it here for completeness.
+Skopeo exists to help manage images in remote registries; e.g. copy from one remote registry to another, remote image tagging, or deleting from a remote registry.  Podman only recently added the capability of copying and tagging remote images via `podman scp`, but only skopeo can delete a remote image.  Copying, tagging, and deleting remote images are more DevOps than application developer concerns and therefore out of scope for this primer, but we mention it here for completeness.
 
 {back_to_toc}
 
 == Installing Podman or Docker
 
-The following lab was created and tested locally in a Bash terminal with or https://podman.io/getting-started/installation[Podman^] (or https://docs.docker.com/get-docker/[Docker^], if you'd prefer) and https://git-scm.com/book/en/v2/Getting-Started-Installing-Git[Git^] already installed.  If needed, follow the links in this paragraph for installation instructions of any of the mentioned utilities.
+The following lab was created and tested in Fedora Linux in a Bash terminal with or https://podman.io/getting-started/installation[Podman^] and https://git-scm.com/book/en/v2/Getting-Started-Installing-Git[Git^] already installed.  The lab will work if you would prefer to use https://docs.docker.com/get-docker/[Docker^]. If needed, follow the links in this paragraph for installation instructions of any of the mentioned utilities.
 
 Windows users can use the https://learn.microsoft.com/en-us/windows/wsl/install[Windows Subsystem for Linux], available to install on all Windows 10+ versions for free.
 
@@ -169,15 +221,20 @@ As a reminder, if you install Docker, `podman` and `docker` commands are complet
 
 {back_to_toc}
 
-== Practical Lab (~10 mins)
+== Practical Lab (~15 mins)
+
+A short lab designed as an introduction to using the Podman CLI and demonstrating some OCI images and concepts.  The lab was tested under Fedora 39, which uses SELinux.  It should work on other OS'es with other security modules enabled, but this has not been validated.
 
 include::_posts/snippets/terminal-tip.adoc[]
 
-This lab is a short and simple demonstration to get familiar with some of the basic podman commands above as you manage images and containers locally.  Open a new terminal:
+Open a new terminal:
 
 . List your current set of images.
 
   $ podman images
+
++
+TIP: Podman has tab completion enabled for subcommands, command options, names of images on the local system, and the names of containers it has created.
 
 +
 Output:
@@ -185,7 +242,7 @@ Output:
   REPOSITORY  TAG         IMAGE ID    CREATED     SIZE
 
 +
-It should be empty like above if your using Podman for the first time.
+It should be empty if your using Podman for the first time.
 
 . Pull the alpine image.
 
@@ -216,7 +273,7 @@ Output:
   docker.io/library/alpine  latest      05455a08881e  2 months ago  7.67 MB
 
 +
-Note the tag is the default, "latest", since we didn't specify which busybox we were pulling.
+Note the tag is the default, _latest_, since we didn't specify a tag.
 
 . Pull the Python image based on the alpine image.
 
@@ -238,7 +295,7 @@ Output:
   f44387b482817f41bdac1892c45711adaedb3a7dd381844cdc3f360e66314d7a
 
 +
-Note that python also resolves to an alias on Docker Hub.  Also notice one of the layers was skipped, which represents the alpine layer that was pulled right before it.  Podman caches layers so it only has to pull them once.
+Note that python also resolves to an alias on Docker Hub.  Also notice one of the layers was skipped, which represents the alpine layer that we just pulled.  Podman caches layers for efficiency.
 
 . List your images again to show both images are now locally stored.
 
@@ -321,7 +378,7 @@ Output:
   ]
 
 +
-If you read through the information above, you can get information on the image digest, tags, and the "Config" section explains that the `Cmd` that the command that is run when the container is launched is `sh`, for example.
+If you read through the information above, you can get information on the image digest, tags, and the "Config.Cmd" section explains that the command that is run when the container is launched is `sh`.
 
 . List your running containers.
 
@@ -345,7 +402,7 @@ Output:
   / #
 
 +
-You should now be in an interactive shell running _inside_ the alpine container.  This bypasses original command that would have been run so we can interact with the image directly.  You'll can use this command to inspect a running container for QA purposes.
+You should now be in an interactive shell running _inside_ the alpine container.  This bypasses the original command that would have been run so we can interact with the image directly.  Running an interactive shell in this manner can be useful during development for debugging purposes.
 
 . List everything in the current directory.
 
@@ -407,19 +464,21 @@ Output:
   drwxrwxrwt    2 root     root             6 Jan 26 17:53 tmp
   drwxr-xr-x    7 root     root            66 Jan 26 17:53 usr
   drwxr-xr-x   12 root     root           137 Jan 26 17:53 var
-  
-. **In a separate, local terminal**, create a greetings file for the next step.
+
+. **In a SECOND, separate terminal** on your host system and outside my_first_container, create a greetings.txt file.
 
   $ echo -n "Howdy" > greeting.txt
 
-. Run a second container with an interactive shell, and list everything in the current directory.
+. Run a second container with an interactive shell, and list everything in the current directory. The `--mount` options is there to mount the greetings.txt file into the new container.
+
+NOTE: The https://docs.podman.io/en/v4.6.1/markdown/options/security-opt.html[`--security-opt label=disable`] is for systems using SELinux.
 
   $ podman run --interactive --tty \
     --mount type=bind,source=$(pwd)/greeting.txt,target=/greeting.txt \
     --security-opt label=disable \
     --name my_second_container alpine
   / # ls -al
-    
+
 +
 Output:
 
@@ -429,11 +488,11 @@ Output:
   drwxr-xr-x    2 root     root          4096 Jan 26 17:53 bin
   drwxr-xr-x    5 root     root           360 Apr 12 23:20 dev
   drwxr-xr-x    1 root     root            25 Apr 12 23:20 etc
+  -rw-r--r--    1 root     root             0 Apr 12 23:20 greeting.txt
   drwxr-xr-x    2 root     root             6 Jan 26 17:53 home
   drwxr-xr-x    7 root     root          4096 Jan 26 17:53 lib
   drwxr-xr-x    5 root     root            44 Jan 26 17:53 media
   drwxr-xr-x    2 root     root             6 Jan 26 17:53 mnt
-  -rw-r--r--    1 root     root             0 Apr 12 23:20 greetings.txt
   drwxr-xr-x    2 root     root             6 Jan 26 17:53 opt
   dr-xr-xr-x  725 nobody   nobody           0 Apr 12 23:20 proc
   drwx------    1 root     root            26 Apr 12 23:20 root
@@ -444,39 +503,45 @@ Output:
   drwxrwxrwt    2 root     root             6 Jan 26 17:53 tmp
   drwxr-xr-x    7 root     root            66 Jan 26 17:53 usr
   drwxr-xr-x   12 root     root           137 Jan 26 17:53 var
-  
-+
-This demonstrates how each container runs as if in it's own, individual host, and has it's own, separate filesystem.  The greetings.txt file is now mounted in the root filesystem.
-  
-. Print the output of the file in the container.
 
-  / # cat /app/greeting.txt
-  
++
+There is no file called `my_first_container.txt`, and you can see the greeting.txt file, which was mounted in the root filesystem on the container from the host filesystem.  This demonstrates how each container runs as if in it's own, individual host, and has it's own, separate filesystem.
+
+. Print the contents of the file in the container.
+
+  / # cat greeting.txt
+
 +
 Output:
 
   Howdy
-  
-. **In a separate, local terminal**, add some text to the file.
 
-  $ echo -n ", y'all" >> greetings.txt
-  
-. In the container terminal, print the contents.
+. Add some text to the file in the container, and print greeting.txt again.
 
-  / # cat /app/greeting.txt
-  
+  / # echo -n ", y'all" >> greetings.txt
+  / # cat greeting.txt
+
 +
 Output:
 
   Howdy, y'all
-  
-+
-This shows that changes to mounted files are reflected immediately in the container.
+
+. **In a THIRD, separate terminal** on your host system and outside my_second_container,  print greeting.txt.
+
+  $ cat greeting.txt
 
 +
-TIP: Mounting files into a container is how applications can keep their configurations external to the container.  "Build once, deploy many" means many different configurations for many different needs and environments.
+Output:
 
-. **In a separate, local terminal**, list the running container.
+  Howdy, y'all
+
++
+This demonstrates that greeting.txt is not a copy in the container, but is actually the file on the host system.
+
++
+TIP: Mounting files into a container is how applications can keep their configurations external to the container.  This is one way "Build once, deploy many" is able to be realized across many deployment environments, and change over time without necessarily needing to rebuild the image.
+
+. On the host terminal, list the running containers.
 
   $ podman ps
 
@@ -492,10 +557,6 @@ This demonstrates that both containers are running on your local system, and eac
 
 . Kill both running containers.
 
-+
-TIP: Podman has tab completion enabled for subcommands and for images and containers, so you don't have to type the complete
-container name.
-
   $ podman kill my_first_container my_second_container
 
 +
@@ -505,7 +566,7 @@ Output:
   my_second_container
 
 +
-TIP: If look in your previous two terminals, you should now see both have returned to your local command prompt since both containers
+NOTE: If look in your previous two terminals, you should now see both have returned to your local command prompt since both containers
 aren't running anymore.
 
 . List the containers again to show they are not running anymore.
@@ -525,22 +586,25 @@ Output:
 Output:
 
   CONTAINER ID  IMAGE                            COMMAND     CREATED         STATUS                       PORTS       NAMES
-  33808400cc0c  docker.io/library/alpine:latest  /bin/sh     14 minutes ago  Exited (137) About a minute ago          my_first_container
-  db00ffdbd9ff  docker.io/library/alpine:latest  /bin/sh     7  minutes ago  Exited (137) About a minute ago          my_second_container
+  33808400cc0c  docker.io/library/alpine:latest  /bin/sh     14 minutes ago  Exited (137) 38 seconds ago              my_first_container
+  db00ffdbd9ff  docker.io/library/alpine:latest  /bin/sh     7  minutes ago  Exited (137) 38 seconds ago              my_second_container
 
-. Cleanup the system by removing the unused containers and the images.
+. Cleanup the system by removing the unused containers.
 
   $ podman rm my_first_container my_second_container my_third_container
-  $ podman rmi python:alpine alpine
-
-+
-TIP: We could typed `podman rmi -a && podman rm -a`, but this isn't always the best idea when you might be using many images on your machine during development and simply forgot, so we avoid the habit.
-
+  
 +
 Output:
 
   my_first_container
   my_second_container
+  
+. Finish cleanup of the system by removing the unused images.
+
+  $ podman rmi python:alpine alpine
+  
++
+Output:
 
   Untagged: docker.io/library/python:alpine
   Untagged: docker.io/library/alpine:latest
@@ -548,7 +612,9 @@ Output:
   Deleted: 05455a08881ea9cf0e752bc48e61bbd71a34c029bb13df01e40e3e70e0d007bd
 
 +
-The above output confirms all containers and images that were created and pulled, respectively, have been removed from your local system.
+TIP: We could typed `podman rm --all` and `podman rmi --all`, but blanket removal of everything might accidentally remove more than you expected, so best to avoid unless you're absolutely sure.
+
+The above output in the final two steps confirms all lab containers and images have been removed from the local system.
 
 This concludes the lab.
 

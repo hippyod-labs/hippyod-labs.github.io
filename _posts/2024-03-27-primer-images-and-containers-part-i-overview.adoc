@@ -18,8 +18,6 @@ include::_posts/snippets/standard-header.adoc[]
 
 :scratch-link:  https://hub.docker.com/_/scratch
 
-{back_to_toc}
-
 == Overview
 
 * **<<Images,OCI Images>> are binary software packages.**
@@ -172,7 +170,7 @@ By default, any untagged image pushed to a repository is automatically given the
 
 {back_to_toc}
 
-===== Image repositories do **NOT** support version control
+===== Image repositories are **NOT** version controlled
 
 Because we expect software developers to be very familiar with version control systems we have made use of those analogies to better communicate some of the concepts inherent in Image registries and repositories; however, it is important to remember that **image repositories do NOT track changes** to images or tags. 
 
@@ -182,7 +180,7 @@ In this sense Git tags and image tags are very much alike, because if you "move"
 
 {back_to_toc}
 
-=== Example: eclipse-temurin on Docker Hub
+===== Example: eclipse-temurin on Docker Hub
 
 As mentioned above, https://hub.docker.com/[Docker Hub^] is a public image registry that hosts a number of official Image repositories free for download, one of which is https://hub.docker.com/_/eclipse-temurin[eclipse-temurin^].  eclipse-temurin is one of many Image repositories containing official builds of OpenJDK images for building or running Java applications.  A quick look at their tags reveals dozens of OpenJDK images that hold different combinations of Java and operating system versions; e.g.:
 
