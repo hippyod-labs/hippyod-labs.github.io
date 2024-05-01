@@ -7,7 +7,7 @@ title: |-
 subtitle: |-
   The App Devs Primer on Images and Containers, Part II
 description: |-
-  Part I in a series of short primers specifically geared towards software developers.  This installment covers the basic
+  Part I in a series of short primers for learning about OCI images and containers.  This installment covers the basic
   concepts of images and containers, and why and how they can useful to the average software developer.
 author: Evan "Hippy" Slatis
 date: 2024-03-27 16:19:03 -0600
@@ -32,9 +32,9 @@ Containers are runtime processes created from images that run in isolation from 
 
 === Audience and scope
 
-This is the first of a series of three primers and two short labs that will describe and teach Open Container Initiative (OCI, or “Docker”) image and container technology, and they were written specifically with the **application developer** in mind.  This is not meant to give anyone a complete or thorough understanding of the technology, but an overview of the concepts, how it benefits application developers, and the practical knowledge needed to use it.
+This is the first of a series of three primers and two short labs that will describe and teach Open Container Initiative (OCI, or “Docker”) image and container technology.  These primers are not meant to give anyone a complete or thorough understanding of the technology, but an overview of the concepts, how it benefits application developers, and the practical knowledge needed to use it.
 
-Not everything contained in Part I will be necessary for an application developer to do their job, but is presented because it's helps in the overall understanding of the technology and what it's doing.  For example, it's important to understand <<Image layers,image layers>>, because they will influence how Dockerfiles are written (the scripts that define how images are built), but not so much <<Blobs,blobs>>.  The reason we take a sentence or two to explain blobs is that they show up on the command line when pulling images, so understanding what they are helps to understand what the CLI is doing when executing certain commands.  For topics that are not germane to day-to-day work we try to be as brief as possible, and links to other resources are provided for those that want a more in depth understanding.
+Not everything contained in Part I will be necessary for an application developer to do their job, but it's presented because it helps in the overall understanding of the technology and what it's doing; e.g. it's important to understand <<Image layers,image layers>>, because they will influence how Dockerfiles (image build scripts) are written, but not so much <<Blobs,blobs>>.  The reason we take a sentence or two to explain blobs is that they show up on the command line when pulling images, so understanding what blobs are helps to understand what the CLI is doing when executing certain commands.  For topics that are not germane to day-to-day work we try to be as brief as possible, and links to other resources are provided for those that want a more in depth understanding.
 
 NOTE: Estimated time to read all three primers and complete labs: ~3 hrs, depending on experience.
 

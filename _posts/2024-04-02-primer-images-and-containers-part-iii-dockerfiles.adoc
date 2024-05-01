@@ -8,7 +8,7 @@ title: |-
 subtitle: |-
   The App Devs Primer on Images and Containers, Part III
 description: |-
-  Part III in a series of short primers specifically geared towards software developers.  This installment covers the basics of how to write Dockerfiles, build images, and run containers, including dome discussion on externalizing configuration and persistent volumes.
+  Part III in a series of short primers for learning about OCI images and containers.  This installment covers the basics of how to write Dockerfiles, build images, and expose ports for accessing containers.
 author: Evan "Hippy" Slatis
 date: 2024-04-02 13:19:03 -0600
 categories: post cloud containers
@@ -16,13 +16,17 @@ categories: post cloud containers
 
 include::_posts/snippets/standard-header.adoc[]
 
-{back_to_toc}
-
 == Overview
 
-Dockerfiles are scripts that define your images and how they are built.  They can define base image, the user ID, persistent volumes, what software to install in the image, and more.
+Dockerfiles are scripts that define your images and how they are built.  They can define a base image, user ID, persistent volume, what software to install in the image, and more.
+
+NOTE: Because we feel that link:{% post_url 2024-04-01-primer-images-and-containers-part-ii-podman %}#fundamental-differences-between-docker-and-podman[Podman is the better tool technologically^], this primer will only reference Podman; however, because Docker and Podman are conceptually and semantically equivalent, **wherever `podman` is mentioned in this document or the code, `docker` can be safely substituted with no change in meaning or outcome.**
+
+=== Prerequisites
 
 This primer assumes the reader is familiar with the basic concepts behind OCI images and containers and Podman/Docker CLI commands.  If not, we suggest reading link:{% post_url 2024-03-27-primer-images-and-containers-part-i-overview %}[Part I^] of this series to cover the basic concepts behind OCI images and containers and/or link:{% post_url 2024-04-01-primer-images-and-containers-part-ii-podman %}[Part II^] that covers the Podman/Docker CLI.
+
+The lab at the end utilizes a simple Spring Boot application for testing.  Since the purpose of the lab is to learn about Dockerfiles and not Java, the lab comes pre-built and installing Java is not necessary.
 
 {back_to_toc}
 
@@ -33,8 +37,7 @@ Dockerfiles have the following format:
   # This is a comment
   <INSTRUCTION> [arguments]
 
-Leading whitespace is ignored, but whitespace in arguments is not.  By convention, Dockerfile instructions are written in ALL CAPS, but the language
-is case insensitive.
+Leading whitespace is ignored, but whitespace in instruction arguments is not.  By convention, Dockerfile instructions are written in ALL CAPS, but the language is case insensitive.
 
 {back_to_toc}
 
@@ -75,9 +78,9 @@ Executable INSTRUCTIONs refer to this as "shell" style.
 
 === Squashing image layers
 
-Every instruction in a Dockerfile adds a link:{% post_url 2024-03-27-primer-images-and-containers-part-i-overview %}#image-layers[layer^] to an image, although only those that actually modify the image filesystem increase the image size.  Layers are cached for faster builds and downloads.
+Every instruction in a Dockerfile adds a link:{% post_url 2024-03-27-primer-images-and-containers-part-i-overview %}#image-layers[layer^] to an image, although only those that actually modify the image filesystem increase the image size.  Layers are cached by Podman for faster builds and downloads.
 
-Podman has the `--squash` flag when building images to compress all new layers into a single layer, and it's turned on by default, but it is still considered good practice to use as few instructions in your Dockerfile as possible; e.g. looking at an example <<RUN>> statement that will upgrade everything in the base image, install wget, and then clean the dnf cache to reduce the final image size:
+Podman has the `--squash` flag when building images to compress all new layers into a single layer, and it's turned on by default, but it is still considered good practice to use as few instructions in your Dockerfile as possible; e.g. looking at an example <<RUN>> statement that will upgrade everything in the base image, install wget, and then clean the `dnf` cache to reduce the final image size:
 
   # bad practice, creates three new layers
   RUN dnf upgrade -y --no-docs --refresh
@@ -89,9 +92,9 @@ Podman has the `--squash` flag when building images to compress all new layers i
       dnf install -y --no-docs wget && \
       dnf clean all
 
-https://docs.docker.com/reference/cli/docker/image/build/#squash[`docker build --squash` will also work^], but it's considered experimental for the moment, which means the Docker daemon will need to be started with the `--experimental` flag to use it.  Docker's documentation also offers a https://docs.docker.com/reference/cli/docker/image/build/#known-limitations[short discussion^] on some of the limitations of squashing an image build, but since the pros almost always outweigh the cons, it's best to leave the option on.
+https://docs.docker.com/reference/cli/docker/image/build/#squash[`docker build --squash` will also work^], but it's considered experimental as of this writing, which means the Docker daemon will need to be started with the `--experimental` flag to use it.  Docker's documentation also offers a https://docs.docker.com/reference/cli/docker/image/build/#known-limitations[short discussion^] on some of the limitations of squashing an image build, but since the pros almost always outweigh the cons, it's best to leave the option on.
 
-To compress everything including the base image layers into a single layer Podman also offers a `--squash-all` flag, and the resulting image of a build will be a single layer.  This is not currently available with Docker.
+To compress everything including the base image layers into a single layer Podman also offers a `--squash-all` flag, and the resulting image of a build will be a single layer.  This functionality is not currently available with Docker.
 
 {back_to_toc}
 
@@ -100,7 +103,7 @@ To compress everything including the base image layers into a single layer Podma
 Most recently both Podman and Docker have begun to support https://en.wikipedia.org/wiki/Here_document#Unix_shells[heredoc^] in Dockerfiles.  Revisiting the <<RUN>> example above:
 
   RUN <<EOF
-    set -e # fail the whole Dockerfile if any of the commands below fail
+    set -e # exit immediately if commands below fail
     dnf upgrade -y --no-docs --refresh
     dnf install -y --no-docs wget
     dnf clean all
@@ -108,20 +111,22 @@ Most recently both Podman and Docker have begun to support https://en.wikipedia.
 
 <<COPY and ADD>> commands also support heredoc.  Most Dockerfiles you'll review on the internet will look like the previous example and not use heredoc, because heredoc was introduced only a few years ago for Docker, and only late in 2023 for Podman.
 
-TIP:  When possible, use heredoc as a cleaner and more readable option to reduce image size.
+TIP: When possible, use heredoc as a cleaner and more readable option to reduce image size.
+
+CAUTION: There were reports that the layer cache wasn't being invalidated when the heredoc was changed.  It should be fixed in the latest releases, but in case you run into this issue, just change the heredoc name or use the older notation.
 
 {back_to_toc}
 
-=== Common Dockerfile Instructions
+== Common Dockerfile Instructions
 
-Around half of the available instructions available in a Dockerfile are summarized below.  They are the instructions that are most commonly used, and the ones we'll use in the lab below.  They are roughly presented in the order they'd be used in a typical Dockerfile rather than alphabetically, because the purpose of this primer is to help application developers become productive and not to be a reference document.
+Around half of the available instructions available in a Dockerfile are summarized below.  They are the instructions that are most commonly used, and the ones we'll use in the lab below.  They are roughly presented in the order they'd be used in a typical Dockerfile rather than alphabetically, because the purpose of this primer is for learning how to write and use Dockerfiles and not to be a reference document.
 
 TIP: For convenience, each header below links to its instruction's https://docs.docker.com/reference/dockerfile/[official Dockerfile reference documentation^].
 
 {back_to_toc}
 
 [#FROM]
-==== https://docs.docker.com/reference/dockerfile/#from[FROM^]
+=== https://docs.docker.com/reference/dockerfile/#from[FROM^]
 
   FROM <image>[:<tag>]
 
@@ -141,13 +146,13 @@ Defines the base image of the build.  Usually the first line of every Dockerfile
 {back_to_toc}
 
 [#ARG]
-==== https://docs.docker.com/reference/dockerfile/#arg[ARG^]
+=== https://docs.docker.com/reference/dockerfile/#arg[ARG^]
 
   ARG <name>[=<default value>]
 
-Defines a build time variable.  Variables can be assigned a default value or left empty to act as parameters to be passed through the command line when starting a build.  These key/values pairs are only available during the build, and will not be part of the image when the build is completed.  Argument scope is from the line in which it is declared.
+Defines a build variable.  Variables can be assigned a default value or left empty to act as parameters to be passed through the command line when starting a build.  These key/values pairs are only available during the build, and will not be part of the image when the build is completed.  Argument **scope is from the line in which it is declared**.
 
-CAUTION: Arguments must be declared in the Dockerfile.  If an argument is defined on the command line but never declared in the Dockerfile, any references to it will be empty.
+CAUTION: Arguments must be declared in the Dockerfile.  References to arguments declared on the command line but not in the Dockerfile will be empty.
 
   # defines a build parameter optionally set on the command line
   # that can be used when the build is executing
@@ -157,16 +162,15 @@ CAUTION: Arguments must be declared in the Dockerfile.  If an argument is define
   # defining this variable on the command line will override it
   ARG MY_DOCKERFILE_VARIABLE=someValue
 
-Referencing a argument is done similar to Shell, `${<arg name>}`.  If you need to pass an argument to running container, assign it to an environment variable using an <<ENV>> statement.
+Referencing a argument in a Dockerfile has the same form as Shell, i.e. `${<arg name>}`.  If you need to pass an argument to running container, assign it to an environment variable using an <<ENV>> statement.
 
   # Referencing the ARG later in Dockerfile and passing it to the container
   ENV MY_FORMER_COMMAND_LINE_PARAMETER=${MY_COMMAND_LINE_PARAMETER}
   <<RUN>> echo ${MY_COMMAND_LINE_PARAMETER}
 
-
 {back_to_toc}
 
-===== Using the CLI to pass in argument values
+==== Using the CLI to pass in argument values
 
 Use the `--build-arg` or `--build-arg-file` options to pass arguments to the Dockerfile:
 
@@ -177,19 +181,24 @@ Or using a properties/env file of arg=value lines:
 
   # read in a list of arguments and their values from a file
   podman --build-arg-file argfile.conf
+  podman --build-arg-file argfile.env
+  podman --build-arg-file argfile.properties
 
-WARNING: **Do NOT use ARG to pass in build secrets**.
+[#ARG-caution]
+==== CAUTION
 
-The values can be exposed through https://docs.podman.io/en/latest/markdown/podman-history.1.html[`podman history`].  You can https://docs.docker.com/reference/dockerfile/#run---mounttypesecret[read about passing in secrets to ^].
+WARNING: **Do NOT use ARGs to pass in build secrets**.
 
-WARNING: **Always declare your ARG statements BEFORE RUN statements.**
+The values can be exposed through https://docs.podman.io/en/latest/markdown/podman-history.1.html[`podman history`].  If accessing build secrets is required, more information https://docs.docker.com/reference/dockerfile/#run---mounttypesecret[is available here^].
 
-Best practices are to declare ARGs towards the top of the file and before a RUN statement.  ARG statements are not cached in the image or intermediate layers; therefore, if a build parameter is changed on the command line `podman build` will not notice a change to the ARG versus the image layer cache until the ARG is realized in an instruction that is persisted to the image.  RUN statements intrinsically realize all ARG values as part of their environment variables and affect the final image.
+WARNING: Always declare your ARG statements **BEFORE** RUN statements.
+
+Declare ARGs towards the top of the file and before any RUN statements.  ARG statements are not cached in the image or intermediate layers; e.g. if a build parameter is changed on the command line `podman build` will not notice a change to a cached image layer until the ARG is realized in an instruction that is persisted to the image.  Because RUN statements intrinsically realize all ARG values as part of their environment variables and affect the final image, and changes to ARGs declared before the RUN statement will be invalidate the layer cache.
 
 {back_to_toc}
 
 [#ENV]
-==== https://docs.docker.com/reference/dockerfile/#env[ENV^]
+=== https://docs.docker.com/reference/dockerfile/#env[ENV^]
 
   ENV <name>=<value> ...
 
@@ -215,61 +224,61 @@ ENV values are available both during the build and in the running container.
 Environment variables *ALWAYS* override <<ARG,argument>> values of the same name.
 
   # The output will be "baz"
-  ARG foo=bar
-  ENV foo=baz
-  ARG foo=something_else
-  RUN echo ${foo}
+  ARG FOO=bar
+  ENV FOO=baz
+  ARG FOO=something_else
+  RUN echo ${FOO}
 
 Environment variables also support a limited number of https://docs.docker.com/reference/dockerfile/#environment-replacement[bash parameter expansion^] modifiers.
 
-  # if my_env_variable is not defined, use the value some_default_value
-  ${my_env_variable:-some_default_value}
+  # if MY_ENV_VARIABLE is not defined, use the value some_default_value
+  ${MY_ENV_VARIABLE:-some_default_value}
 
 {back_to_toc}
 
 [#USER]
-==== https://docs.docker.com/reference/dockerfile/#user[USER^]
+=== https://docs.docker.com/reference/dockerfile/#user[USER^]
 
   USER <username>
 
-Set the current USER to use in the image for subsequent Dockerile instructions.  The last USER defined will be the UID used to launch a container based on the image.
+Set the current USER to use in the image for subsequent Dockerfile instructions.  The last USER instruction in the Dockerfile will be the UID used to launch a container based on the image.
 
   # root user
   USER root
 
-  # user with UID 1001: very standard
+  # user with UID 1001: best practices
   USER 1001
 
-Root typically declared towards the top of the Dockerfile to carry out tasks such as installing software, or changing permissions on directory structures for the image.
+Root is typically declared towards the top of the Dockerfile to carry out tasks such as installing software or changing file permissions for the image.
 
 {back_to_toc}
 
-===== Container security
+==== Container security
 
-It goes without saying that good security practices should always be followed when writing code, and Dockerfiles are no exception.  While your applications may look and feel that they're not running on the host machine when a container is launched, it is important to remember they are running on a host.
+It goes without saying that good security practices should always be followed when writing code, and Dockerfiles are no exception.  Applications running in containers may look and feel like they're running in isolation, but this is not guaranteed.
 
-WARNING: The OCI runtime container environment is isolated, but is **NOT** secure.  Unless otherwise needed, best practice is to declare a unprivileged USER before defining your <<ENTRYPOINT and CMD, ENTRYPOINT>>; e.g. `USER 1001`.
+WARNING: The OCI runtime container environment is isolated, but is **NOT** secure.  Unless otherwise needed, best practice is to declare a unprivileged USER UID before defining a <<ENTRYPOINT and CMD, ENTRYPOINT>>; e.g. `USER 1001`.
 
 {back_to_toc}
 
-==== COPY and ADD
+=== COPY and ADD
 
-ADD  <src> ... <dest>
-ADD  ["<src>", ... "<dest>"]
+  ADD  <src> ... <dest>
+  ADD  ["<src>", ... "<dest>"]
 
-COPY  <src> ... <dest>
-COPY  ["<src>", ... "<dest>"]
+  COPY  <src> ... <dest>
+  COPY  ["<src>", ... "<dest>"]
 
 The instructions are defined as follows:
 
 * https://docs.docker.com/reference/dockerfile/#copy[COPY^] - copy a file or directory into an image.
 * https://docs.docker.com/reference/dockerfile/#add[ADD^] - copy a **local or remote** file or directory into an image.
 
-They each takes a list of paths, moving a list of n-1 files or directories to the last listed file or directory.
+They each takes a list of paths, moving a list of _n-1_ files or directories to the last listed file or directory.  <src>'s must be within the build context.
 
   # COPY or ADD appConfig.yaml from the target directory to /app/config.yaml in the image
-  ADD ["../target/appConfig.yaml", "/app/config.yaml"]
-  COPY ../target/appConfig.yaml /app/config.yaml
+  ADD ["target/appConfig.yaml", "/app/config.yaml"]
+  COPY target/appConfig.yaml /app/config.yaml
 
   # COPY or ADD the file file1.txt and directory dir1 to the app directory in the image
   ADD file1.txt dir1 /app
@@ -277,37 +286,37 @@ They each takes a list of paths, moving a list of n-1 files or directories to th
 
 {back_to_toc}
 
-===== Differences between COPY and ADD
+==== Differences between COPY and ADD
 
 COPY can only copy local files into images, but ADD as some additional capabilities:
 
-* ADD can copy remote files form URLS
+* ADD can copy remote files from URLS
 * ADD can pull Git repositories
-* ADD will automatically unpack compressed tar files
+* ADD will automatically unpack compressed tar file
 
 Using ADD can have unpredictable side effects.  <<RUN>> statements can use `git pull`, `curl`, or `wget` for fetching remote files, and `zip`, `bzip2`, or `gzip` for decompression.
 
-CAUTION:  Use COPY and RUN and **avoid using ADD**.
+CAUTION:  Use a combination of COPY and RUN and **avoid using ADD**.
 
 {back_to_toc}
 
 [#RUN]
-==== https://docs.docker.com/reference/dockerfile/#run[RUN^]
+=== https://docs.docker.com/reference/dockerfile/#run[RUN^]
 
   RUN <command> ...
   RUN ["<command", ...]
 
-**Run defines commands that are run during the build**.  Can be used to install software, create users, set file permissions, etc.
+Run defines commands that are run **during the build**.  It can be used to install software, create users, set file permissions, etc.
 
   # Install wget on an RPM-based Linux image
   RUN dnf install -y --no-docs wget
 
-Compare this with <<ENTRYPOINT and CMD>>, which defines commands and arguments that only execute when the container is launched.
+Compare this with <<entrypoint-and-cmd,ENTRYPOINT and CMD>>, which defines commands and arguments that only execute when the container is launched.
 
 {back_to_toc}
 
 [#EXPOSE]
-==== https://docs.docker.com/reference/dockerfile/#expose[EXPOSE^]
+=== https://docs.docker.com/reference/dockerfile/#expose[EXPOSE^]
 
 EXPOSE is functionally a no-op, but it's widely used to document which ports, if any, are expected to be used the by the container.  It can document whether they are UDP or TCP, with TCP being the  default if not used.
 
@@ -321,11 +330,11 @@ EXPOSE is functionally a no-op, but it's widely used to document which ports, if
 {back_to_toc}
 
 [#WORKDIR]
-==== https://docs.docker.com/reference/dockerfile/#workdir[WORKDIR^]
+=== https://docs.docker.com/reference/dockerfile/#workdir[WORKDIR^]
 
   WORKDIR <path>
 
-Set the containers working directory.  WORKDIR may be used multiple times in a Dockerfile.  The initial WORKDIR is whatever was the last value defined in the <<FROM,base image>>.  If no WORKDIR has ever been set, it's the root directory, `/`.  Relative paths are relative to the current working directory.
+Set the container's working directory.  Like other instructions, WORKDIR can be used multiple times in a Dockerfile.  The initial WORKDIR is whatever was the last value defined in the <<FROM,base image>>.  If no WORKDIR has ever been set, it's the root directory, `/`.  Relative paths in a Dockerfile are relative to the current working directory.
 
   WORKDIR /app
   WORKDIR resources
@@ -335,38 +344,47 @@ Output of the above with be `/app/resources`.
 
 {back_to_toc}
 
-[#ENTRYPOINT and CMD]
-==== https://docs.docker.com/reference/dockerfile/#entrypoint[ENTRYPOINT^] and https://docs.docker.com/reference/dockerfile/#cmd[CMD^]
+[#entrypoint-and-cmd]
+=== https://docs.docker.com/reference/dockerfile/#entrypoint[ENTRYPOINT^] and https://docs.docker.com/reference/dockerfile/#cmd[CMD^]
 
-  CMD <command> <param1> ...
+* "exec" form:
+
   CMD ["<command>", "<param1>", ...]
-  CMD <param1> ...
   CMD ["<param1>, ..."]
 
-  ENTRYPOINT <command>, param1 ...
   ENTRYPOINT ["<command>", "param1", ...]
+
+* "shell" form:
+
+  CMD <command> <param1> ...
+  CMD <param1> ...
+
+  ENTRYPOINT <command>, param1 ...
 
 ENTRYPOINT and CMD define the commands and parameters that run and are used when the container is launched.
 
 These instructions are defined as follows:
 
 * ENTRYPOINT - defines the executable to start when your container launches.  Defaults to `/bin/sh -c`.
++
+The "shell" form of ENTRYPOINT will always launch a shell before acting on the arguments.  The "exec" (JSON array) form must be used if a shell isn't wanted or needed.
 
-* CMD - The list of arguments to pass to the `ENTRYPOINT`.  Can easily be overridden on the command line.
+* CMD - The list of arguments passed to the `ENTRYPOINT`.  Can easily be overridden on the command line.
 
 Since ENTRYPOINT defaults to launching a shell and taking a script as an argument, only defining CMD will work, but it creates unnecessary overhead with an extra `sh` process.
 
-  # passes "echo", "-n", and "howdy" as arguments to the ENTRYPOINT
+  # passes "echo", "-n", and "howdy" as arguments to the ENTRYPOINT, overriding
+  # the CMD instruction if it was defined
   podman run busybox echo -n howdy
 
-  # overrides the ENTRYPOINT with "echo" and passes
+  # overrides the ENTRYPOINT with the `echo` command and passes `-n` and `howdy` to the CMD instruction
   podman run --entrypoint "echo" busybox -n howdy
 
-In the above examples, the ENTRYPOINT is explicitly overridden by the `--entrypoint` flag, whereas the CMD values are implied by the arguments a the end.  busybox uses the default ENTRYPOINT.
+While both CLI examples above have the same result, the first one will launch an extra, extraneous shell.
 
-TIP: Use ENTRYPOINT to define the executable and required parameters that will run when the container is launched.  Use CMD to list optional and/or default arguments that can be overridden on the command line.
+TIP: Use ENTRYPOINT to define an executable and arguments that a container should always launch with, and use CMD for arguments that are expected to be commonly overridden by any users of the image.
 
-TIP: For complex ENTRYPOINTs, consider creating an executable shell script, <<COPY and ADD,copying>> into the image, and declare an ENTRYPOINT that calls the shell script; e.g. ENTRYPOINT my-complex-script.sh.
+TIP: For complex ENTRYPOINTs, consider creating an executable shell script and <<COPY and ADD,copying>> it into the image. Define an ENTRYPOINT that calls the shell script; e.g. `ENTRYPOINT my-complex-script.sh` or ENTRYPOINT["sh", "-c", "my-complex-script.sh"].
 
 Compare this with <<RUN>>, which defines commands that only execute during the build.
 
@@ -374,31 +392,20 @@ Compare this with <<RUN>>, which defines commands that only execute during the b
 
 == Practical Lab (~20 mins)
 
-The lab cover four basic topics:
-
-* Dockerfile structure and design
-* Building images using build parameters
-* Build once, run many
+The following is a brief lab designed as an introduction to writing and building images with Dockerfiles, and running images with exposed ports.
 
 include::_posts/snippets/terminal-tip.adoc[]
 
-{back_to_toc}
-
-=== Dockerfiles and Building Images
-
 . Clone the Git repository from GitHub:
 
-  $ git clone https://github.com/hippyod/hello-world-container-lab
+  $ git clone https://github.com/hippyod-labs/container-lab
 
 +
-The downloaded application is a simple Spring Boot application that will generate fake logs of fake welcome messages to a log file in a persistent `VOLUME`.
-
-+
-INFORMATION: While its recommended to manually type in the Dockerfile for practice,
+The downloaded application is a simple Spring Boot application.
 
 . Create the Dockerfile in your preferred editor or Vim.
 
-  $ cd hello-world-container-lab
+  $ cd container-lab
   $ vim Dockerfile
 
 +
@@ -414,61 +421,34 @@ Features to pay attention to:
 
   .. The `FROM` statement defines the base image.
 
-  .. Declare the build parameter `SPRING_PROFILES_ACTIVE` with a default value and pass it the container environment.  <<Using the CLI to pass in argument values,Declare it before the RUN statement>> to make sure changes to the value from the command line are acknowledged on subsequent builds.
+  .. Declare the build parameter `SPRING_PROFILES_ACTIVE` with a default value and pass it to the container environment.  <<ARG-caution,Declare it before the RUN statement>> to make sure changes to the value from the command line are acknowledged on subsequent builds.
 
   .. The initial `<<USER>>` during image building is `root` so changes to the image can be easily made.
 
   .. A <<Heredoc,heredoc>> `<<RUN>>` instruction upgrades all installed software in the image to the latest available, cleans the cache downloaded during the upgrade to reduce the final image size, and creates a logs directory, `/mnt/logs` with read-write permissions for everyone.
 +
-TIP: Upgrading base images during a build is a best practice that should be done regularly in order to make sure any vulnerabilities that might be baked into the base image are patched.
+TIP: Upgrade all software from the base image and rebuilding regularly to patch any vulnerabilities in the image.
 
 +
 TIP: Remove any intermediate files create by a RUN instruction to reduce image size.
 
-  .. The result of a Maven build in the project is a JAR file, and the Dockerfile will <<COPY and ADD,COPY>> it into the image in the `/app` folder.
+  .. The result of a Maven build in the project is a JAR file, and the Dockerfile will <<COPY and ADD,COPY>> it into the `/app` directory in the image.
 +
 TIP: Per best practices, the JAR file is **NOT** copied to the root directory.
 
-  .. <<EXPOSE>> doesn't do anything (i.e. it's documentation), but it does declare for users of the image that the container port will be a TCP port at 8081.
+  .. <<EXPOSE>> doesn't actually do anything, but it does document for consumers of the image that the container port will be a TCP port at 8081.
 
-  .. With the image filesystem fully defined and all software installed, set the `USER` to an unprivileged user.
+  .. With the image filesystem fully defined and all software installed, set the `USER` to an unprivileged UID.
 
 +
-IMPORTANT: Containers are isolated, but not secure.  Running with an unprivileged USER protects the host system.
+CAUTION: Containers are isolated, but not secure.  Running with an unprivileged UID helps protect the host system.
 
-  .. Set the <<WORKDIR, working directory>> to the application directory created earlier.
+  .. Set the <<WORKDIR, working directory>> to `/app`.
 
-  .. The <<ENTRYPOINT and CMD, ENTRYPOINT>> runs in the preferred "exec" format, which means Java run immediately at launch without a separate shell process being created.
+  .. The <<ENTRYPOINT and CMD, ENTRYPOINT>> runs in the preferred "exec" format, which means Java runs directly at launch without a separate shell process being created.
 
 +
 Save the Dockerfile and return to the terminal.
-
-. Build the application so there are application artifacts to copy into the image:
-
-  $ mvn clean package
-
-+
-Output:
-
-+
-----
-[INFO] Scanning for projects...
-[INFO]
-[INFO] --------------< org.hippyod.labs:app >---------------
-[INFO] Building app 0.0.1-SNAPSHOT
-[INFO]   from pom.xml
-[INFO] ---------------------[ jar ]------------------------
-
-<redacted>
-
-[INFO] ----------------------------------------------------
-[INFO] BUILD SUCCESS
-[INFO] ----------------------------------------------------
-[INFO] Total time:  3.861 s
-[INFO] Finished at: 2024-04-23T19:09:49-05:00
-[INFO] ----------------------------------------------------
-----
-
 
 . Build the image:
 
@@ -479,47 +459,46 @@ Output:
 
 +
 ----
-STEP 1/14: FROM docker.io/eclipse-temurin:17-jre-ubi9-minimal
+STEP 1/11: FROM docker.io/eclipse-temurin:17-jre-ubi9-minimal
 Trying to pull docker.io/library/eclipse-temurin:17-jre-ubi9-minimal...
-Getting image source signaturesGetting image source signatures
-Copying blob 61597572c7e1 done   |
-Copying blob 2895d6faeea8 done   |
-Copying blob 440448b8b996 done   |
-Copying blob 573d0f223026 done   |
-Copying blob e005526d2fe8 done   |
-Copying config b7aa8fec27 done   |
+Getting image source signatures
+Copying blob 00038fe29d65 done   | 
+Copying blob 2895d6faeea8 done   | 
+Copying blob fac16dd16cc7 done   | 
+Copying blob c94b45a4f4f6 done   | 
+Copying blob 440448b8b996 done   | 
+Copying config 4f135ec10c done   | 
 Writing manifest to image destination
-STEP 2/11: USER root
---> b29f8b210c15
+STEP 2/11: ARG SPRING_PROFILES_ACTIVE=prod
+--> 37fc2072d95d
 
 <redacted>
 
 STEP 10/11: WORKDIR ${JAVA_APP_DIR}
---> 155362800551
+--> 0bd77c959e0f
 STEP 11/11: ENTRYPOINT ["java", "-jar", "app.jar"]
 COMMIT containerlab
---> d450c515edde
+--> 9a31eac84c6c
 Successfully tagged localhost/containerlab:latest
-d450c515edded93b85fecf49228f3efac48faae3ee8af70c875f13eddde641eb
+9a31eac84c6c1a08cdd216e573fe34b6db4b1dd6146b2528919f2ee6988431bf
 ----
-
-=== Container Volumes and Externalizing Configuration
 
 . Run a container based on the image in detached mode.
 
-  $ podman run --detach --publish 8081:8081 --name containerlab1 containerlab
+  $ podman run --detach --publish 8081:8081 --name my_first_container containerlab
 
 +
-* `--detach` - run the detached, meaning it's output won't go the terminal.
+* `--detach` - run the container detached, meaning the container will run in the background.
 * `--publish` - publish the container port (second value) to the host port
 * `--name` - name the container.  A random name will be generated by Podman if this is missing; e.g. `agitated_darwin`.
+
++
+This demonstrates how to externalize a port on the container for external consumption, and how to run a container in background on the host.  More information on the above `podman run` options can be https://docs.podman.io/en/latest/markdown/podman-run.1.html[found here^].
 
 +
 Output:
 
   cc4b78dfd216f1291c0d584dfc11532e9f2c3b3aa2ca77eb99558fd1a1ac1c75
-
-+ The hash of the container is the only output.
 
 . List the container to prove its running.
 
@@ -528,10 +507,10 @@ Output:
 +
 Output:
 
-  CONTAINER ID  IMAGE                          COMMAND     CREATED             STATUS             PORTS                   NAMES
-  7a9e5da7fd90  localhost/containerlab:latest              About a minute ago  Up About a minute  0.0.0.0:8081->8081/tcp  containerlab1
+  CONTAINER ID  IMAGE                          COMMAND     CREATED         STATUS         PORTS                   NAMES
+  72e09ec47078  localhost/containerlab:latest              15 seconds ago  Up 15 seconds  0.0.0.0:8081->8081/tcp  my_first_container
 
-. Open a browser, and go to URL `http://localhost:8081/`.  The web page should be showing the logs being printed with the default greeting defined in `hello-world-container-lab/src/main/ressources/application.properties`, and will update every two seconds:
+. Open a browser, and go to URL `http://localhost:8081/`.  The web page should be showing the logs being printed with the default greeting defined in `container-lab/src/main/resources/application.properties`, and will update every two seconds:
 
   GREETING #1 : Hello, world
   GREETING #2 : Hello, world
@@ -540,10 +519,17 @@ Output:
 
 . Stop and destroy the container.
 
-  $ podman stop containerlab1
-  $ podman rm containerlab1
+  $ podman stop my_first_container
+  $ podman rm my_first_container
+  
++
+Output:
 
-. Rebuild the image, but this time set the default Spring profile to the application's Spanish version.
+  my_first_container
+  
+  my_first_container
+
+. Rebuild the image, but this time set the default active Spring profile to Spanish.
 
   $ podman build --build-arg SPRING_PROFILES_ACTIVE=es --tag containerlab .
 
@@ -551,21 +537,21 @@ Output:
 Output:
 
 +
----
+----
 <redacted>
 
 STEP 10/11: WORKDIR ${JAVA_APP_DIR}
---> 71a8d56d693d
+--> 0a979925ee8c
 STEP 11/11: ENTRYPOINT ["java", "-jar", "app.jar"]
 COMMIT containerlab
---> 67b0a3828f86
+--> b8f578632e24
 Successfully tagged localhost/containerlab:latest
-67b0a3828f86d910bd72c1dc16ff7163fd7e1ad1091088e091820ba60691bf47
+b8f578632e244318754a2a94259ad813e0e5f17e97954abd78095c59ef9e09c1
 ----
 
 . Run the container for a second time, open a browser, and go to URL `http://localhost:8081/`.
 
-  $ podman run --detach --publish 8081:8081 --name containerlab1 containerlab
+  $ podman run --detach --publish 8081:8081 --name my_first_container containerlab
 
 +
 Output:
@@ -574,18 +560,74 @@ Output:
   GREETING #2 : Hola
   GREETING #3 : Hola
   GREETING #4 : Hola
+  
++
+This demonstrates how image configuration can be parameterized and be changed via the build. 
 
 . Start a second container, but override the build configured Spring profile, open a browser, and go to URL `http://localhost:8082/`.
 
 +
-CAUTION: Be careful to use the different port number.  We have to use a separate port since the first container is already using it.
+CAUTION: Be careful to use the different port number.  We have to use a separate port since the first container is already using 8081.
 
-  $ podman run --detach --env SPRING_PROFILES_ACTIVE=prod --publish 8082:8081 --name containerlab1 containerlab
+  $ podman run --detach --env SPRING_PROFILES_ACTIVE=dev --publish 8082:8081 --name my_second_container containerlab
 
 +
 Output:
 
-  GREETING #1 : Hola
-  GREETING #2 : Hola
-  GREETING #3 : Hola
-  GREETING #4 : Hola
+  GREETING #1 : Hello Dev
+  GREETING #2 : Hello Dev
+  GREETING #3 : Hello Dev
+  GREETING #4 : Hello Dev
+
++
+This demonstrates how an image can be run with one or more different configurations without having to rebuild the image.  In theory we're looking at the development deployment versus the Spanish production deployment.
+  
+. Stop both containers.
+
+  $ podman stop my_first_container my_second_container
+  
++
+Output:
+
+  my_first_container
+  my_second_container
+  
++
+If you look in either browser window, both pages are now blank.
+
+. Cleanup the system by removing the unused containers.
+
+  $ podman rm my_first_container my_second_container
+  
++
+Output:
+
+  my_first_container
+  my_second_container
+  
+. Finish cleanup of the system by removing the unused images.
+
+  $ podman rmi containerlab eclipse-temurin:17-jre-ubi9-minimal
+
++
+Output:
+
+  Untagged: localhost/containerlab:latest
+  Untagged: docker.io/library/eclipse-temurin:17-jre-ubi9-minimal
+  Deleted: b8f578632e244318754a2a94259ad813e0e5f17e97954abd78095c59ef9e09c1
+  Deleted: 0a979925ee8c45cdd3dbbbfe804799f75450bb306beed28602b05cbdc11e703a
+  Deleted: fbc98b58f0860ccbfbc9b7ecf014cd23c0113041cff6526c7696513941222dda
+  Deleted: 8d727d8b1b001ca96f32cc61e2848f05430fcb15fdf4c778cc2b247741fb11bb
+  Deleted: 713e582edf7d1d8e18788f3e2d9e27e13e1007f6d7aa255b871965e58b1311ce
+  Deleted: 48c193f4b35eb1f003e05a2fcd9409494f1508d1d1526843afb663c4550b2c41
+  Deleted: 228dcf3298beb7b0caaf4e7149eafe745e7f4e0a2299d313c00d5cc1de2962c6
+
+The above output in the final two steps confirms all lab containers and images have been removed from the local system.
+
+This concludes the lab and the series of primers for OCI images and containers.
+
+{back_to_toc}
+
+== Further reading
+
+https://docs.docker.com/reference/dockerfile/[Dockerfile reference]

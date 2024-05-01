@@ -15,14 +15,16 @@
 # in the templates via {{ site.myvariable }}.
 
 title: The Hippy of Dev
-subtitle: Hip Snippets of Dev from Evan "Hippy" Slatis
+subtitle: Evan "Hippy" Slatis
 author:
   name: Evan "Hippy" Slatis
   email: hippyod+labs@gmail.com
-description: All things DevOps and software development.
-copyright-notice: Copyright © 2024 Evan A Slatis.  All rights reserved.
+description: Hip Snippets of Dev for One and All
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "https://hippyod.org" # the base hostname & protocol for your site, e.g. http://example.com
+github_comments_repository: hippyod-labs/.github
+
+locale: en_US
 
 # Build settings
 theme: hippyod-labs-theme

@@ -7,8 +7,8 @@ title: |-
 subtitle: |-
   The App Devs Primer on Images and Containers, Part II
 description: |-
-  Part II in a series of short primers specifically geared towards software developers.  This installment covers the basics
-  of Docker/Podman, the command line utility for creating and managing images and containers.
+  Part II in a series of short primers for learning about OCI images and containers.  This installment covers the basics
+  of the Podman and Docker, command line utilities for creating and managing images and containers.
 author: Evan "Hippy" Slatis
 date: 2024-04-01 16:19:03 -0600
 categories: post cloud containers
@@ -17,23 +17,23 @@ categories: post cloud containers
 include::_posts/snippets/standard-header.adoc[]
 
 
-{back_to_toc}
-
 == Overview
 
 There are two competing utilities for building and running containers, *_https://podman.io/docs/installation[Podman^]_* and *_https://docs.docker.com/get-docker/[Docker^]_*.  They are available for Windows, Linux, and Macs, and from the end users point of view, they are completely equivalent when it comes to executing commands; i.e. they can be considered aliases of one another.  On *nix-based systems, `alias docker=podman` will work if only Podman is installed when using basic commands for building images or running containers.
 
-NOTE: Because we feel that <<Fundamental differences between Docker and Podman, Podman is the better tool technologically>>, this primer will only reference `podman` in the terminal; however, because Docker and Podman are functionally and semantically equivalent when it comes to the basic commands for building and running images and containers, **wherever `podman` is mentioned in this document, `docker` can be safely substituted with no change in meaning or outcome.**
+NOTE: Because we feel that <<Fundamental differences between Docker and Podman, Podman is the better tool technologically>>, this primer will only reference Podman; however, because Docker and Podman are conceptually and semantically equivalent, **wherever `podman` is mentioned in this document or the code, `docker` can be safely substituted with no change in meaning or outcome.**
+
+=== Prerequisites
 
 This primer assumes the reader is familiar with the basic concepts behind OCI images and containers.  If not, we suggest reading link:{% post_url 2024-03-27-primer-images-and-containers-part-i-overview %}[Part I^] of this series first to cover those topics before continuing.
 
 {back_to_toc}
 
-=== Common Subcommands
+== Common Subcommands
 
 The following are a sampling of the most commonly used https://docs.podman.io/en/latest/Commands.html[Podman subcommands^].  Many are shorthand for `podman image <command>` or `podman container <command>`.  Each subcommand listed below links to the official documentation for complete information.
 
-==== https://docs.podman.io/en/v3.0/markdown/podman-build.1.html[build^]
+=== https://docs.podman.io/en/v3.0/markdown/podman-build.1.html[build^]
 
 Build an image.
 
@@ -47,7 +47,7 @@ Build an image.
 
 {back_to_toc}
 
-==== help
+=== help
 
 Help about any subcommand.
 
@@ -59,7 +59,7 @@ Help about any subcommand.
 
 {back_to_toc}
 
-==== https://docs.podman.io/en/v3.0/markdown/podman-history.1.html[history^]
+=== https://docs.podman.io/en/v3.0/markdown/podman-history.1.html[history^]
 
 Print the history of an image, which includes information on each layer in the image, its size, and how it was created.
 
@@ -78,7 +78,7 @@ Print the history of an image, which includes information on each layer in the i
 {back_to_toc}
 
 [#podman-kill]
-==== https://docs.podman.io/en/latest/markdown/podman-kill.1.html[kill^]
+=== https://docs.podman.io/en/latest/markdown/podman-kill.1.html[kill^]
 
 Forcibly kill the main process in one or more running containers.  Less graceful than <<podman-stop,stopping>> a container.
 
@@ -91,7 +91,7 @@ Forcibly kill the main process in one or more running containers.  Less graceful
 
 {back_to_toc}
 
-==== https://docs.podman.io/en/v3.0/markdown/podman-pull.1.html[pull^]
+=== https://docs.podman.io/en/v3.0/markdown/podman-pull.1.html[pull^]
 
 Pull an image from an image registry.
 
@@ -108,7 +108,7 @@ Docker Hub uses aliases for many of the common, official images it hosts; e.g.
 
 {back_to_toc}
 
-==== https://docs.podman.io/en/v3.0/markdown/podman-push.1.html[push^]
+=== https://docs.podman.io/en/v3.0/markdown/podman-push.1.html[push^]
 
 Push an image to an image registry.
 
@@ -119,7 +119,7 @@ Push an image to an image registry.
 
 {back_to_toc}
 
-==== https://docs.podman.io/en/v3.0/markdown/podman-rm.1.html[rm^]
+=== https://docs.podman.io/en/v3.0/markdown/podman-rm.1.html[rm^]
 
 Delete a container.
 
@@ -134,7 +134,7 @@ Delete a container.
 
 {back_to_toc}
 
-==== https://docs.podman.io/en/v3.0/markdown/podman-rmi.1.html[rmi^]
+=== https://docs.podman.io/en/v3.0/markdown/podman-rmi.1.html[rmi^]
 
 Delete a local image.  Only works if no containers based on the image exist.  Short for `podman image rm`.
 
@@ -147,7 +147,7 @@ Delete a local image.  Only works if no containers based on the image exist.  Sh
 {back_to_toc}
 
 [#podman-run]
-==== https://docs.podman.io/en/v3.0/markdown/podman-run.1.html[run]
+=== https://docs.podman.io/en/v3.0/markdown/podman-run.1.html[run]
 
 Run a container.  Run is shorthand for `podman https://docs.podman.io/en/v3.0/markdown/podman-create.1.html[create^]` and `podman https://docs.podman.io/en/v3.0/markdown/podman-start.1.html[start^]`.
 
@@ -158,7 +158,7 @@ Run a container.  Run is shorthand for `podman https://docs.podman.io/en/v3.0/ma
 {back_to_toc}
   
 [#podman-stop]
-==== https://docs.podman.io/en/latest/markdown/podman-stop.1.html[stop^]
+=== https://docs.podman.io/en/latest/markdown/podman-stop.1.html[stop^]
 
 Stop the main process in one or more running containers.  A more graceful request than <<podman-kill,kill>>.
 
@@ -167,7 +167,7 @@ Stop the main process in one or more running containers.  A more graceful reques
 
 {back_to_toc}
 
-==== https://docs.podman.io/en/v3.0/markdown/podman-tag.1.html[tag]
+=== https://docs.podman.io/en/v3.0/markdown/podman-tag.1.html[tag]
 
 Optionally rename and/or tag an image.  If no tag follows the ":", defaults to "latest".
 
@@ -183,7 +183,7 @@ Optionally rename and/or tag an image.  If no tag follows the ":", defaults to "
 
 {back_to_toc}
 
-=== Fundamental differences between Docker and Podman
+== Fundamental differences between Docker and Podman
 
 **Docker is a daemon in *nix based systems, and a service in Windows**.  This means it runs in the background all the time, and it runs with root or administrator privileges.
 
@@ -193,19 +193,19 @@ Besides being more efficient with system resources, this makes Podman more secur
 
 {back_to_toc}
 
-=== Related utilities
+== Related utilities
 
 While Docker is a singular tool, Podman exists within a suite of utilities that are maintained by the *https://github.com/containers[Containers^]* community on GitHub.  Two of these utilities that are worth mentioning here are *_https://github.com/containers/skopeo/blob/main/install.md[Skopeo^]_* and *_https://github.com/containers/buildah[Buildah^]_*.
 
 {back_to_toc}
 
-==== Buildah
+=== Buildah
 
 For the most part, builds can be executed through Docker and Podman, but Buildah exists in case more complicated builds of OCI images are required than what Podman/Docker can provide through Dockerfiles.  Buildah can also build Dockerfiles.  Complex image builds without a Dockerfile are outside the scope of this primer, and application developers should never need this functionality, but we mention it here for completeness.
 
 {back_to_toc}
 
-==== Skopeo
+=== Skopeo
 
 Skopeo exists to help manage images in remote registries; e.g. copy from one remote registry to another, remote image tagging, or deleting from a remote registry.  Podman only recently added the capability of copying and tagging remote images via `podman scp`, but only skopeo can delete a remote image.  Copying, tagging, and deleting remote images are more DevOps than application developer concerns and therefore out of scope for this primer, but we mention it here for completeness.
 
@@ -223,7 +223,7 @@ As a reminder, if you install Docker, `podman` and `docker` commands are complet
 
 == Practical Lab (~15 mins)
 
-A short lab designed as an introduction to using the Podman CLI and demonstrating some OCI images and concepts.  The lab was tested under Fedora 39, which uses SELinux.  It should work on other OS'es with other security modules enabled, but this has not been validated.
+The following is a brief lab designed as an introduction to using the Podman CLI and demonstrating some OCI images and concepts.  The lab was tested under Fedora 39, which uses SELinux.  It should work on other OS'es with other security modules enabled.
 
 include::_posts/snippets/terminal-tip.adoc[]
 
