@@ -25,6 +25,8 @@ url: "https://hippyod-labs.github.io" # temp url
 # url: "https://hippyod.org"
 # baseurl: "" # the subpath of your site, e.g. /blog#
 
+github_comments_repo: hippyod-labs/hippyod-labs.github.io
+
 locale: en_US
 
 # Build settings
