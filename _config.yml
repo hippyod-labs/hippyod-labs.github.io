@@ -26,7 +26,7 @@ url: "https://hippyod.org" # the base hostname & protocol for your site, e.g. ht
 locale: en_US
 
 # Build settings
-theme: hippyod-labs-theme
+remote_theme: hippyod-labs/hippyod-labs-theme
 hippyod-labs-theme:
   skin: dark
   social_links:
