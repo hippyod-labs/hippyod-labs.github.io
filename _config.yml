@@ -22,7 +22,6 @@ author:
 description: Hip Snippets of Dev for One and All
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "https://hippyod.org" # the base hostname & protocol for your site, e.g. http://example.com
-github_comments_repository: hippyod-labs/.github
 
 locale: en_US
 
