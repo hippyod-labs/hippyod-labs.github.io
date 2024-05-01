@@ -21,7 +21,8 @@ author:
   email: hippyod+labs@gmail.com
 description: Hip Snippets of Dev for One and All
 baseurl: "" # the subpath of your site, e.g. /blog
-url: "https://hippyod.org" # the base hostname & protocol for your site, e.g. http://example.com
+url: "https://hippyod-labs.github.io" # temp url
+# url: "https://hippyod.org"
 
 locale: en_US
 
