@@ -30,8 +30,8 @@ github_comments_repo: hippyod-labs/hippyod-labs.github.io
 locale: en_US
 
 # Build settings
-theme: hippyod-labs-theme
-# remote_theme: hippyod-labs/hippyod-labs-theme
+# theme: hippyod-labs-theme
+remote_theme: hippyod-labs/hippyod-labs-theme
 hippyod-labs-theme:
   skin: dark
   social_links:
