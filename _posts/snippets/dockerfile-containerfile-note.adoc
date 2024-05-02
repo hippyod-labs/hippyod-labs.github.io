@@ -1,0 +1,1 @@
+NOTE: While the OCI specification actually denotes _Containerfiles_ to be the default, Docker isn't fully OCI compliant as of the writing of this primer.  Because most publicly available projects still use Dockerfiles, for convenience and historical purposes these primers will only refer to Dockerfiles.

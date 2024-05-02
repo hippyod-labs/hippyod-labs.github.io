@@ -44,6 +44,8 @@ Build an image.
   # build an image tagged as some-tag for image repository some-image-repo
   # using a file named my-dockerfile.base-image in the current directory
   podman build --tag some-image-repo:some-tag --file my-dockerfile.base-image
+  
+include::_posts/snippets/dockerfile-containerfile-note.adoc[]
 
 {back_to_toc}
 

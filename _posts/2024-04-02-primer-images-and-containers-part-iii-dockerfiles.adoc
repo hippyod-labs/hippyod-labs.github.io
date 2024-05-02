@@ -20,6 +20,8 @@ include::_posts/snippets/standard-header.adoc[]
 
 Dockerfiles are scripts that define your images and how they are built.  They can define a base image, user ID, persistent volume, what software to install in the image, and more.
 
+include::_posts/snippets/dockerfile-containerfile-note.adoc[]
+
 NOTE: Because we feel that link:{% post_url 2024-04-01-primer-images-and-containers-part-ii-podman %}#fundamental-differences-between-docker-and-podman[Podman is the better tool technologically^], this primer will only reference Podman; however, because Docker and Podman are conceptually and semantically equivalent, **wherever `podman` is mentioned in this document or the code, `docker` can be safely substituted with no change in meaning or outcome.**
 
 === Prerequisites

@@ -56,6 +56,8 @@ The technology for creating images and containers has existed for decades, but h
 
 **Images are defined by and built with scripts known as __Dockerfiles__**.  These scripts typically live in the root directory of an application's source code repository and are used to build an application image during development and at the end of an application's continuous integration pipeline.
 
+include::_posts/snippets/dockerfile-containerfile-note.adoc[]
+
 {back_to_toc}
 
 === Image layers
