@@ -25,6 +25,8 @@ domain: hippyod.org
 url: "https://hippyod.org"
 # baseurl: "" # the subpath of your site, e.g. /blog#
 
+google_analytics: G-HBBXSLT99N
+
 github_comments_repo: hippyod-labs/hippyod-labs.github.io
 
 locale: en_US
