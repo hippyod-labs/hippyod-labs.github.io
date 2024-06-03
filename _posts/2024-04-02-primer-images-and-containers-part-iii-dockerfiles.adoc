@@ -457,7 +457,7 @@ Save the Dockerfile and return to the terminal.
   $ podman build --tag containerlab .
   
 +
-NOTE: If the build fails complaining about the `Unknown instruction: "SET"`, it means you're probably running on an older version of Podman that does not recognize heredoc.  Please go the *https://podman.io/docs/installation[Podman installation^]* page and install the latest version.
+NOTE: If the build fails complaining about the `Unknown instruction: "SET"`, it means you're probably running on an older version of Podman that does not recognize heredoc.  Please update your installed version to the the latest version per the *https://podman.io/docs/installation[Podman installation^]* page.
 
 +
 Output:
