@@ -473,6 +473,7 @@ Output:
 
 . Run a second container with an interactive shell, and list everything in the current directory. The `--mount` options is there to mount the greetings.txt file into the new container.
 
++
 NOTE: The https://docs.podman.io/en/v4.6.1/markdown/options/security-opt.html[`--security-opt label=disable`] is for systems using SELinux.
 
   $ podman run --interactive --tty \
@@ -568,7 +569,7 @@ Output:
   my_second_container
 
 +
-NOTE: If look in your previous two terminals, you should now see both have returned to your local command prompt since both containers
+NOTE: If you look in your previous two terminals, you should now see both have returned to your local command prompt since both containers
 aren't running anymore.
 
 . List the containers again to show they are not running anymore.

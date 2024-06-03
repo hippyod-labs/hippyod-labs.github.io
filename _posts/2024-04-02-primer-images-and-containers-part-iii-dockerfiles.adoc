@@ -429,10 +429,10 @@ Features to pay attention to:
 
   .. A <<Heredoc,heredoc>> `<<RUN>>` instruction upgrades all installed software in the image to the latest available, cleans the cache downloaded during the upgrade to reduce the final image size, and creates a logs directory, `/mnt/logs` with read-write permissions for everyone.
 +
-TIP: Upgrade all software from the base image and rebuilding regularly to patch any vulnerabilities in the image.
+TIP: It's a good idea to upgrade all software in the base image and rebuild regularly to patch any vulnerabilities.
 
 +
-TIP: Remove any intermediate files create by a RUN instruction to reduce image size.
+TIP: Remove any intermediate files created by a RUN instruction to reduce image size.
 
   .. The result of a Maven build in the project is a JAR file, and the Dockerfile will <<COPY and ADD,COPY>> it into the `/app` directory in the image.
 +
@@ -455,6 +455,9 @@ Save the Dockerfile and return to the terminal.
 . Build the image:
 
   $ podman build --tag containerlab .
+  
++
+NOTE: If the build fails complaining about the `Unknown instruction: "SET"`, it means you're probably running on an older version of Podman that does not recognize heredoc.  Please go the *https://podman.io/docs/installation[Podman installation^]* page and install the latest version.
 
 +
 Output:

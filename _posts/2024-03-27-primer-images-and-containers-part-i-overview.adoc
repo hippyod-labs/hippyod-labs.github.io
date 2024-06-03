@@ -88,7 +88,9 @@ Base images tend to be larger than they need to be, because to be reusable to a 
 
 ===== Scratch
 
-The most fundamental of base images is called **{scratch-link}[_scratch_^]**.  Scratch doesn't actually exist, and building an image "from scratch" just means the new image is starting out with an empty filesystem and only a root directory, `/`.  While this is the most minimal of images, building these types of images requires an advanced knowledge and understanding of gathering and installing the minimum amount of low-level dependencies for an application to run.  In almost all cases this isn't practical for an application developer, and how to do so is outside the scope of this primer, but we include this information here for completeness.
+The most fundamental of base images is called **{scratch-link}[_scratch_^]**.  The scratch image has a link to what looks like an image on Docker Hub, but scratch doesn't actually exist anymore.  Building an image "from scratch" will not add a <<Image layers,layer>> to the final image, and just means the new image is starting out with an empty filesystem and only a root directory, `/`.
+
+While using scratch as a base image is the most minimal of images, building these types of images requires an advanced knowledge and understanding of gathering and installing the minimum amount of low-level dependencies for an application to run.  In almost all cases this isn't practical for an application developer, and how to do so is outside the scope of this primer, but we include this information here for completeness.
 
 {back_to_toc}
 
@@ -127,7 +129,7 @@ An image **_registry_** is a digital warehouse for images.  Image registries are
 The following are examples of different public Image registries, and are free to use by the public:
 
 * https://hub.docker.com[Docker Hub^] +
-  The original Docker registry.  https://hub.docker.com/_/docker[Docker has a free image^] also has a free image available for local, development use.
+  The original Docker registry.  https://hub.docker.com/_/docker[Docker also has a free image^] available for local, development use.
 
 * https://quay.io[Red Hat Quay^] +
   Red Hat’s public image registry, which hosts many of Red Hat’s publicly available images, along with providing opportunities for individuals to host their own images.  It is also available for https://www.projectquay.io/[download for free use], since everything Red Hat produces is OSS.
@@ -227,7 +229,7 @@ Because images are immutable and include all of the dependencies needed to run y
 
 This consistency means that in almost all cases when an issue is found in one environment (e.g. production), you can be reasonably confident that you’ll be able to reproduce the issue in some other environment (e.g. development or test) so you can focus on fixing it.  In general, your project should never get mired in and stumped by the dreaded “Works on my machine” problem again due to differences in how the application is deployed.
 
-CAUTION: Just because containers ensure the environment your application is deployed to is always the same, that does not mean it will have the same configuration; e.g. development and production are rarely deployed with the same configuration, the .  Containers can drastically minimize the problem, but cannot eliminate the issue completely.
+CAUTION: Just because containers ensure the environment your application is deployed to is always the same, that does not mean it will have the same configuration; e.g. development and production are rarely if ever deployed with the same configuration.  Containers can drastically minimize the problem, but cannot eliminate the issue completely.
 
 {back_to_toc}
 
