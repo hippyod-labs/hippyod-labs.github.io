@@ -19,12 +19,14 @@ subtitle: The DevOps and Development Blog of Evan "Hippy" Slatis
 author:
   name: Evan &#x22;Hippy&#x22; Slatis
   email: hippyod+labs@gmail.com
+  url: https://www.linkedin.com/in/evan-slatis-b1b67014
 description: An application developer's DevOps and software development blog 
 tagline: Hip Snippets of Dev for One and All
 domain: hippyod.org
 # url: "https://hippyod-labs.github.io" # temp url
 url: "https://hippyod.org"
 # baseurl: "" # the subpath of your site, e.g. /blog#
+logo: siteicon.png
 
 google_analytics: G-HBBXSLT99N
 
