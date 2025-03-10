@@ -4,6 +4,6 @@ liquid: true
 layout: post
 title: Discuss
 link_text: 
-redirect_from: /discuss
+redirect_from: /discuss.hmtl
 redirect_to: https://github.com/orgs/hippyod-labs/discussions
 ---
