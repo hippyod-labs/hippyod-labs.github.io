@@ -15,11 +15,11 @@
 # in the templates via {{ site.myvariable }}.
 
 title: The Hippy of Dev
-subtitle: The DevOps and Develop Blog for Evan "Hippy" Slatis
+subtitle: The DevOps and Development Blog of Evan "Hippy" Slatis
 author:
   name: Evan &#x22;Hippy&#x22; Slatis
   email: hippyod+labs@gmail.com
-description: An DevOps and software development blog primarily for application developers
+description: An application developer's DevOps and software development blog 
 tagline: Hip Snippets of Dev for One and All
 domain: hippyod.org
 # url: "https://hippyod-labs.github.io" # temp url
