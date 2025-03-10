@@ -9,9 +9,17 @@ subtitle: |-
 description: |-
   Part II in a series of short primers for learning about OCI images and containers.  This installment covers the basics
   of the Podman and Docker, command line utilities for creating and managing images and containers.
+excerpt: |-
+  Part II in a series of short primers for learning about OCI images and containers.  This installment covers the basics
+  of the Podman and Docker, command line utilities for creating and managing images and containers.
 author: Evan "Hippy" Slatis
 date: 2024-04-01 16:19:03 -0600
 categories: post cloud containers
+
+seo_title: A Docker and Podman tutorial and primer on Images and Containers, Part II
+seo_description: |-
+  Part II in a series of short primers for learning about OCI images and containers.  This installment covers the basics
+  of the Podman and Docker, command line utilities for creating and managing images and containers.
 ---
 
 include::_posts/snippets/standard-header.adoc[]

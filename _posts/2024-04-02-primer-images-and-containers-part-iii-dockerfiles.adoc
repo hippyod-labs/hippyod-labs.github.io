@@ -9,9 +9,15 @@ subtitle: |-
   The App Devs Primer on Images and Containers, Part III
 description: |-
   Part III in a series of short primers for learning about OCI images and containers.  This installment covers the basics of how to write Dockerfiles, build images, and expose ports for accessing containers.
+excerpt: |-
+  Part III in a series of short primers for learning about OCI images and containers.  This installment covers the basics of how to write Dockerfiles, build images, and expose ports for accessing containers.
 author: Evan "Hippy" Slatis
 date: 2024-04-02 13:19:03 -0600
 categories: post cloud containers
+
+seo_title: A Docker and Podman tutorial and primer on Images and Containers, Part III
+seo_description: |-
+  Part III in a series of short primers for learning about OCI images and containers.  This installment covers the basics of how to write Dockerfiles, build images, and expose ports for accessing containers.
 ---
 
 include::_posts/snippets/standard-header.adoc[]

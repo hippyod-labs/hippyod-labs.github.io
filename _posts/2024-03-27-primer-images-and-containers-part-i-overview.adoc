@@ -5,13 +5,21 @@ layout: post
 title: |-
   Understanding Images and Containers
 subtitle: |-
-  The App Devs Primer on Images and Containers, Part II
+  The App Devs Primer on Images and Containers, Part I
 description: |-
+  Part I in a series of short primers for learning about OCI images and containers.  This installment covers the basic
+  concepts of images and containers, and why and how they can useful to the average software developer.
+excerpt: |-
   Part I in a series of short primers for learning about OCI images and containers.  This installment covers the basic
   concepts of images and containers, and why and how they can useful to the average software developer.
 author: Evan "Hippy" Slatis
 date: 2024-03-27 16:19:03 -0600
 categories: post cloud containers
+
+seo_title: A Docker and Podman tutorial and primer on Images and Containers, Part I
+seo_description: |-
+  Part I in a series of short primers for learning about OCI images and containers.  This installment covers the basic
+  concepts of images and containers, and why and how they can useful to the average software developer.
 ---
 
 include::_posts/snippets/standard-header.adoc[]
